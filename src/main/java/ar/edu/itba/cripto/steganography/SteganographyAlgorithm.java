@@ -1,7 +1,24 @@
 package ar.edu.itba.cripto.steganography;
 
 public enum SteganographyAlgorithm {
-    LSB1,
-    LSB4,
-    LSBI
+    LSB1{
+        @Override
+        public SteganographyMethod getInstance() {
+            return new LSB1();
+        }
+    },
+    LSB4{
+        @Override
+        public SteganographyMethod getInstance() {
+            return new LSB1();
+        }
+    },
+    LSBI{
+        @Override
+        public SteganographyMethod getInstance() {
+            return new LSB1();
+        }
+    };
+
+    public abstract SteganographyMethod getInstance();
 }
