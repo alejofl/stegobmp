@@ -19,4 +19,8 @@ public class FileUtils {
     public static void writeBytes(Path path, byte[] bytes) throws IOException {
         Files.write(path, bytes);
     }
+
+    public static String getExtension(String path) {
+        return path.substring(path.lastIndexOf('.') + 1);
+    }
 }

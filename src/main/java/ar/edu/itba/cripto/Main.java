@@ -1,5 +1,6 @@
 package ar.edu.itba.cripto;
 
+import ar.edu.itba.cripto.encryption.Cryptography;
 import ar.edu.itba.cripto.encryption.EncryptionAlgorithm;
 import ar.edu.itba.cripto.encryption.EncryptionMode;
 import ar.edu.itba.cripto.steganography.SteganographyAlgorithm;
@@ -19,12 +20,18 @@ public class Main {
             SteganographyAlgorithm steganographyAlgorithm = SteganographyAlgorithm.valueOf(parsed.getOptionValue("steg"));
             EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.valueOf(parsed.getOptionValue("a", "AES_128"));
             EncryptionMode encryptionMode = EncryptionMode.valueOf(parsed.getOptionValue("m", "CBC"));
-            String password = parsed.getOptionValue("pass");
+            String password = parsed.hasOption("pass") ? parsed.getOptionValue("pass") : null;
+            if (password == null) {
+                encryptionAlgorithm = EncryptionAlgorithm.NONE;
+            }
             byte[] carrier = FileUtils.readBytes(parsed.getOptionValue("p"));
             Path output = FileUtils.createFile(parsed.getOptionValue("out"));
 
+            Cryptography cryptography = new Cryptography(encryptionAlgorithm, encryptionMode, password);
+
             if (parsed.hasOption("embed") && parsed.hasOption("in")) {
                 byte[] payload = FileUtils.readBytes(parsed.getOptionValue("in"));
+                String payloadExtension = FileUtils.getExtension(parsed.getOptionValue("in"));
                 // TODO
             } else if (parsed.hasOption("extract")) {
                 // TODO
@@ -32,7 +39,7 @@ public class Main {
                 throw new ParseException("Mode not specified");
             }
         } catch (Exception e) {
-            System.err.println("Argument Error: " + e.getMessage());
+            System.err.println("Something went wrong when running the program: " + e.getMessage());
             cli.printHelp();
             System.exit(1);
         }

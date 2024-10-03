@@ -26,7 +26,6 @@ public class StegobmpCLI {
                 .option("p")
                 .argName("file")
                 .hasArg()
-                .required()
                 .desc("Carrier file")
                 .build();
         Option output = Option.builder()
