@@ -43,6 +43,11 @@ public class LSB1 implements SteganographyMethod{
         return new byte[0];
     }
 
+    @Override
+    public boolean canEmbed(byte[] carrier, byte[] payload) {
+        return false;
+    }
+
     public static void main(String[] args) {
         byte[] carrier = {
                 (byte) 0b01101101,

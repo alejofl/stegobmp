@@ -16,10 +16,15 @@ public class Cryptography {
     private static final byte[] SALT = new byte[8];
     private static final int ITERATIONS = 10000;
 
+    private final EncryptionAlgorithm algorithm;
+    private final EncryptionMode mode;
     private final Cipher encrypter;
     private final Cipher decrypter;
 
     public Cryptography(EncryptionAlgorithm algorithm, EncryptionMode mode, String password) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException {
+        this.algorithm = algorithm;
+        this.mode = mode;
+
         if (algorithm == EncryptionAlgorithm.NONE) {
             this.encrypter = null;
             this.decrypter = null;
@@ -64,5 +69,13 @@ public class Cryptography {
             return data;
         }
         return this.decrypter.doFinal(data);
+    }
+
+    public EncryptionMode getMode() {
+        return mode;
+    }
+
+    public EncryptionAlgorithm getAlgorithm() {
+        return algorithm;
     }
 }

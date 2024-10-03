@@ -11,6 +11,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 
 import java.nio.file.Path;
+import java.util.AbstractMap.SimpleEntry;
 
 public class Main {
     public static void main(String[] args) {
@@ -34,9 +35,16 @@ public class Main {
             if (parsed.hasOption("embed") && parsed.hasOption("in")) {
                 byte[] payload = FileUtils.readBytes(parsed.getOptionValue("in"));
                 String payloadExtension = FileUtils.getExtension(parsed.getOptionValue("in"));
-                // TODO
+                byte[] data = steganographyMethod.preprocessEmbedding(payload, payloadExtension, cryptography);
+                if (!steganographyMethod.canEmbed(carrier, data)) {
+                    throw new IllegalArgumentException("Carrier is too small to embed the payload");
+                }
+                byte[] result = steganographyMethod.embed(carrier, data);
+                FileUtils.writeBytes(output, result);
             } else if (parsed.hasOption("extract")) {
-                // TODO
+                byte[] extracted = steganographyMethod.extract(carrier);
+                SimpleEntry<byte[], String> data = steganographyMethod.postprocessExtraction(extracted, cryptography);
+                FileUtils.writeBytes(output, data.getKey());
             } else {
                 throw new ParseException("Mode not specified");
             }

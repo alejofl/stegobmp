@@ -11,4 +11,9 @@ public class LSB4 implements SteganographyMethod{
     public byte[] extract(byte[] carrier) {
         return new byte[0];
     }
+
+    @Override
+    public boolean canEmbed(byte[] carrier, byte[] payload) {
+        return false;
+    }
 }
