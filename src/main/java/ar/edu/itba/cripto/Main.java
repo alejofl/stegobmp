@@ -4,6 +4,7 @@ import ar.edu.itba.cripto.encryption.Cryptography;
 import ar.edu.itba.cripto.encryption.EncryptionAlgorithm;
 import ar.edu.itba.cripto.encryption.EncryptionMode;
 import ar.edu.itba.cripto.steganography.SteganographyAlgorithm;
+import ar.edu.itba.cripto.steganography.SteganographyMethod;
 import ar.edu.itba.cripto.utils.FileUtils;
 import ar.edu.itba.cripto.utils.StegobmpCLI;
 import org.apache.commons.cli.CommandLine;
@@ -28,6 +29,7 @@ public class Main {
             Path output = FileUtils.createFile(parsed.getOptionValue("out"));
 
             Cryptography cryptography = new Cryptography(encryptionAlgorithm, encryptionMode, password);
+            SteganographyMethod steganographyMethod = steganographyAlgorithm.getInstance();
 
             if (parsed.hasOption("embed") && parsed.hasOption("in")) {
                 byte[] payload = FileUtils.readBytes(parsed.getOptionValue("in"));
