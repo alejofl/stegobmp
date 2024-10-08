@@ -21,9 +21,9 @@ public class LSB1 implements SteganographyMethod{
 
         long payloadSize = payload.length;
 
-        int i = 0; // i = HEADER_SIZE -> porque tenemos que saltear el header
+        int i = HEADER_SIZE; // i = 0 -> porque tenemos que saltear el header
         int k = 0; // indice que recorre el payload
-        while (i < (payloadSize * BYTES_NEEDED)) { // i < (HEADER_SIZE + payloadSize) * BYTES_NEEDED
+        while (i < HEADER_SIZE + (payloadSize * BYTES_NEEDED)) { // i < (payloadSize * BYTES_NEEDED)
             for (int j = 0; j < BYTES_NEEDED; j++) {
                 byte mask = (byte) (1 << (BYTES_NEEDED - 1 - j));
                 byte payloadByte = (byte) (payload[k] & mask);
@@ -44,16 +44,16 @@ public class LSB1 implements SteganographyMethod{
     public byte[] extract(byte[] carrier) {
         long payloadSize = 0;
 
-        // OJO int i = HEADER_SIZE; -> indice que recorre el carrier posterior al header
-        for (int i = 0; i < BYTES_NEEDED * SIZE_STORAGE; i++) {
+        // OJO int i = 0; -> indice que recorre el carrier posterior al header
+        for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * SIZE_STORAGE)); i++) {
             int sizeBit = carrier[i] & 1;
-            payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * SIZE_STORAGE - 1 - i);
+            payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * SIZE_STORAGE - 1 - i + HEADER_SIZE);
         }
         byte[] payload = new byte[(int) (payloadSize + SIZE_STORAGE)];
 
-        int i = 0; // OJO int i = HEADER_SIZE; -> indice que recorre el carrier posterior al header
+        int i = HEADER_SIZE; // int i = 0; -> indice que recorre el carrier posterior al header
         int k = 0; // -> indice que recorre el payload
-        while (i < BYTES_NEEDED * (SIZE_STORAGE + payloadSize) ) { // BYTES_NEEDED * (HEADER_SIZE + CIF_SIZE + payloadSize)
+        while (i < (HEADER_SIZE + BYTES_NEEDED * (SIZE_STORAGE + payloadSize)) ) { //BYTES_NEEDED * (SIZE_STORAGE + payloadSize)
             byte bit;
             byte payloadByte = 0;
             for (int j = 0; j < BYTES_NEEDED; j++) {
@@ -68,14 +68,23 @@ public class LSB1 implements SteganographyMethod{
 
     @Override
     public boolean canEmbed(byte[] carrier, byte[] payload) {
-        long carrierBytes = carrier.length; // carrier.length - HEADER_SIZE;
+        long carrierBytes = carrier.length - HEADER_SIZE; // carrier.length;
         long payloadBytesNeeded = payload.length * BYTES_NEEDED;
 
         return payloadBytesNeeded <= carrierBytes;
     }
 
     public static void main(String[] args) {
+
         byte[] carrier = {
+                0,1,2,3,4,5,6,7,8,9,
+                0,1,2,3,4,5,6,7,8,9,
+                0,1,2,3,4,5,6,7,8,9,
+                0,1,2,3,4,5,6,7,8,9,
+                0,1,2,3,4,5,6,7,8,9,
+                0,1,2,3,
+
+
                 // 4 * 8 = 32 bytes para guardar el tamanio
                 (byte) 0b00000001,
                 (byte) 0b00000001,
