@@ -14,7 +14,9 @@ import java.util.Arrays;
 
 public interface SteganographyMethod {
     byte[] embed(byte[] carrier, byte[] payload);
+
     byte[] extract(byte[] carrier);
+
     boolean canEmbed(byte[] carrier, byte[] payload);
 
     default byte[] preprocessEmbedding(byte[] payload, String extension, Cryptography cryptography) throws IOException, IllegalBlockSizeException, BadPaddingException {
@@ -47,5 +49,37 @@ public interface SteganographyMethod {
         byte[] payload = Arrays.copyOfRange(data, 4, 4 + payloadLength);
         String extension = new String(Arrays.copyOfRange(data, 4 + payloadLength, data.length - 1));
         return new SimpleEntry<>(payload, extension);
+    }
+
+    default byte[] carrierTransform(byte[] carrier, byte[] payload, int headerSize, int bytesNeeded, int bitsToHide, byte maskPayload, byte maskCarrier) {
+        int i = headerSize;
+        int k = 0;
+        byte payloadByte;
+        while(i < headerSize + (payload.length * bytesNeeded)) {
+            for (int j = 0; j < bytesNeeded; j++) {
+                payloadByte = (byte) (payload[k] >> (8 - bitsToHide * (j + 1)));
+                payloadByte = (byte) (payloadByte & maskPayload);
+                carrier[i] = (byte) ((carrier[i] & maskCarrier) | payloadByte);
+                i++;
+            }
+            k++;
+        }
+        return carrier;
+    }
+
+    default byte[] carrierExtract(byte[] carrier, byte[] payload, int headerSize, int bytesNeeded, int bitsToHide, byte maskPayload) {
+        int i = headerSize;
+        int k = 0;
+        while (i < (headerSize + bytesNeeded * payload.length) ) {
+            byte data;
+            byte payloadByte = 0;
+            for (int j = 0; j < bytesNeeded; j++) {
+                data = (byte) ((carrier[i] & maskPayload) << (8 - bitsToHide * (j + 1)));
+                payloadByte = (byte) (payloadByte | data);
+                i++;
+            }
+            payload[k++] = payloadByte;
+        }
+        return payload;
     }
 }
