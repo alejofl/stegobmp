@@ -6,7 +6,9 @@ public class LSB1 implements SteganographyMethod{
     static private int HEADER_SIZE = 54;
     static private int SIZE_STORAGE = 4;
     static private int BYTES_NEEDED = 8;
-    static private byte MASK = (byte) 0b11111110;
+    static private int BITS_TO_HIDE = 1;
+    static private byte MASK_PAYLOAD = (byte) 0b00000001;
+    static private byte MASK_CARRIER = (byte) 0b11111110;
 
     public LSB1 () {
 
@@ -18,20 +20,18 @@ public class LSB1 implements SteganographyMethod{
             throw new IllegalArgumentException();
         }
 
-        long payloadSize = payload.length;
+        return carrierTransform(carrier, payload, BYTES_NEEDED, BITS_TO_HIDE, MASK_PAYLOAD, MASK_CARRIER);
+    }
 
+    private byte[] carrierTransform(byte[] carrier, byte[] payload, int bytesNeeded, int bitsToHide, byte maskPayload, byte maskCarrier) {
         int i = HEADER_SIZE;
         int k = 0;
-        while (i < HEADER_SIZE + (payloadSize * BYTES_NEEDED)) {
-            for (int j = 0; j < BYTES_NEEDED; j++) {
-                byte mask = (byte) (1 << (BYTES_NEEDED - 1 - j));
-                byte payloadByte = (byte) (payload[k] & mask);
-
-                if (payloadByte != 0) {
-                    carrier[i] = (byte) ((carrier[i] & MASK) | (byte) 1);
-                } else {
-                    carrier[i] = (byte) ((carrier[i] & MASK) | (byte) 0);
-                }
+        byte payloadByte;
+        while(i < HEADER_SIZE + (payload.length * bytesNeeded)) {
+            for (int j = 0; j < bytesNeeded; j++) {
+                payloadByte = (byte) (payload[k] >> (8 - bitsToHide * (j + 1)));
+                payloadByte = (byte) (payloadByte & maskPayload);
+                carrier[i] = (byte) ((carrier[i] & maskCarrier) | payloadByte);
                 i++;
             }
             k++;
