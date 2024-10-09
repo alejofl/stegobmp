@@ -1,5 +1,7 @@
 package ar.edu.itba.cripto.steganography;
 
+import java.util.Arrays;
+
 public class LSB1 implements SteganographyMethod{
     static private int HEADER_SIZE = 54;
     static private int SIZE_STORAGE = 4;
@@ -127,6 +129,133 @@ public class LSB1 implements SteganographyMethod{
                 (byte) 0b00000010,
                 (byte) 0b00000001,
                 (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b00010001,
+                (byte) 0b00001000,
+                (byte) 0b00000101,
+                (byte) 0b00000010,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+
                 (byte) 0b00000001,
                 (byte) 0b00000000,
                 (byte) 0b00000001,
@@ -138,8 +267,19 @@ public class LSB1 implements SteganographyMethod{
                 (byte) 0,
                 (byte) 0,
                 (byte) 0,
+                (byte) 11,
+                (byte) 0b10010001, // -111
+                (byte) 20,
+                (byte) 127,
+                (byte) 128, // -> Al ser 0b10000000 entonces tenemos que es -128
+                (byte) 129, // -> Al ser 0b10000001 entonces tenemos que es -129
+                (byte) 16,
+                (byte) 40,
+                (byte) 255, // -> Al ser 0b11111111 entonces tenemos que es -1
+                (byte) 0,
+                (byte) 69,
                 (byte) 1,
-                (byte) 0b10010001,
+
         };
         LSB1 aux = new LSB1();
         // Mostrar los arrays originales
@@ -165,9 +305,12 @@ public class LSB1 implements SteganographyMethod{
 
         byte[] ans = aux.extract(carrier);
 
-        for (byte b : ans) {
-            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
-        }
+        System.out.println(Arrays.toString(ans));
+
+//        for (byte b : ans) {
+//            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+//            System.out.println(String);
+//        }
 
     }
 }

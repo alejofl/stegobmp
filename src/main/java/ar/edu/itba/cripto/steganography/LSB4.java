@@ -1,5 +1,7 @@
 package ar.edu.itba.cripto.steganography;
 
+import java.util.Arrays;
+
 public class LSB4 implements SteganographyMethod{
     static private int HEADER_SIZE = 54;
     static private int SIZE_STORAGE = 4;
@@ -39,7 +41,7 @@ public class LSB4 implements SteganographyMethod{
         long payloadSize = 0;
 
         for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * SIZE_STORAGE)); i++) {
-            int sizeBit = carrier[i] & 1;
+            int sizeBit = carrier[i] & 15;
             payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * SIZE_STORAGE - 1 - i + HEADER_SIZE);
         }
         byte[] payload = new byte[(int) (payloadSize + SIZE_STORAGE)];
@@ -101,6 +103,33 @@ public class LSB4 implements SteganographyMethod{
                 // 1 byte se guardan en 2 bytes
                 (byte) 0b01000001,
                 (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+                (byte) 0b01000001,
+                (byte) 0b00100000,
+
         };
 
         // Array de bytes cuyos últimos bits se modificarán
@@ -108,8 +137,18 @@ public class LSB4 implements SteganographyMethod{
                 (byte) 0,
                 (byte) 0,
                 (byte) 0,
+                (byte) 11,
+                (byte) 0b10010101, // -107
+                (byte) 20,
+                (byte) 127,
+                (byte) 128, // -> Al ser 0b10000000 entonces tenemos que es -128
+                (byte) 129, // -> Al ser 0b10000001 entonces tenemos que es -127
+                (byte) 16,
+                (byte) 40,
+                (byte) 255, // -> Al ser 0b11111111 entonces tenemos que es -1
+                (byte) 0,
+                (byte) 69,
                 (byte) 1,
-                (byte) 0b10010101,
         };
         LSB4 aux = new LSB4();
         // Mostrar los arrays originales
@@ -135,9 +174,11 @@ public class LSB4 implements SteganographyMethod{
 
         byte[] ans = aux.extract(carrier);
 
-        for (byte b : ans) {
-            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
-        }
+        System.out.println(Arrays.toString(ans));
+
+//        for (byte b : ans) {
+//            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+//        }
 
     }
 }
