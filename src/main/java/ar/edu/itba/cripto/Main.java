@@ -27,7 +27,6 @@ public class Main {
                 encryptionAlgorithm = EncryptionAlgorithm.NONE;
             }
             byte[] carrier = FileUtils.readBytes(parsed.getOptionValue("p"));
-            Path output = FileUtils.createFile(parsed.getOptionValue("out"));
 
             Cryptography cryptography = new Cryptography(encryptionAlgorithm, encryptionMode, password);
             SteganographyMethod steganographyMethod = steganographyAlgorithm.getInstance();
@@ -40,10 +39,12 @@ public class Main {
                     throw new IllegalArgumentException("Carrier is too small to embed the payload");
                 }
                 byte[] result = steganographyMethod.embed(carrier, data);
+                Path output = FileUtils.createFile(parsed.getOptionValue("out"));
                 FileUtils.writeBytes(output, result);
             } else if (parsed.hasOption("extract")) {
                 byte[] extracted = steganographyMethod.extract(carrier);
                 SimpleEntry<byte[], String> data = steganographyMethod.postprocessExtraction(extracted, cryptography);
+                Path output = FileUtils.createFile(parsed.getOptionValue("out") + data.getValue());
                 FileUtils.writeBytes(output, data.getKey());
             } else {
                 throw new ParseException("Mode not specified");
