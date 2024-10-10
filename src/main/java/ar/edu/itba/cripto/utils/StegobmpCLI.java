@@ -26,6 +26,7 @@ public class StegobmpCLI {
                 .option("p")
                 .argName("file")
                 .hasArg()
+                .required()
                 .desc("Carrier file")
                 .build();
         Option output = Option.builder()
@@ -58,7 +59,6 @@ public class StegobmpCLI {
                 .option("pass")
                 .argName("password")
                 .hasArg()
-                .required()
                 .desc("Password")
                 .build();
         options.addOption(embed);
