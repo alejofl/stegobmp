@@ -5,8 +5,8 @@ import java.util.Arrays;
 public class LSBI implements SteganographyMethod{
     static private int BYTES_HEADER = 54;
     static private int BITS_IN_BYTE = 8;
-    static private int BITS_PREFIX = 4;
-    static private int BITS_SIZE = 4;
+    static private int BYTES_PREFIX = 4;
+    static private int BYTES_SIZE = 4;
     static private byte MASK_PAYLOAD = (byte) 0b00000001;
     static private byte MASK_PREFIX = (byte) 0b00000110;
     static private byte MASK_CARRIER = (byte) 0b11111110;
@@ -16,29 +16,35 @@ public class LSBI implements SteganographyMethod{
         if(!canEmbed(carrier, payload)){
             throw new IllegalArgumentException();
         }
-        int[] prefixReplaced = {0, 0, 0, 0}; // {00, 01, 10, 11}
-        int prefix;
 
-        for(int i = 0, carrierIndex = BYTES_HEADER + BITS_PREFIX; i < payload.length * BITS_IN_BYTE; i++, carrierIndex++) {
+        int[] prefixReplaced = {0, 0, 0, 0}; // {00, 01, 10, 11}
+
+        int prefix;
+        int byteIndex, bitPosition;
+        byte mask, payloadBit, carrierBit;
+        for(int i = 0, carrierIndex; i < payload.length * BITS_IN_BYTE; i++) {
+            carrierIndex = i + BYTES_HEADER + BYTES_PREFIX;
+
             prefix = (byte) ((carrier[carrierIndex] & MASK_PREFIX) >> 1);
 
-            int byteIndex = i / 8;
-            int bitPosition = 7 - (i % 8);  // De MSB a LSB
-            byte mask = (byte) (1 << bitPosition);
-            byte payloadBit = (byte) ((payload[byteIndex] & mask) >> bitPosition);
+            byteIndex = i / 8;
+            bitPosition = 7 - (i % 8);  // De MSB a LSB
+            mask = (byte) (1 << bitPosition);
+            payloadBit = (byte) ((payload[byteIndex] & mask) >> bitPosition);
 
-            byte carrierBit = (byte) (carrier[carrierIndex] & MASK_PAYLOAD);
+            carrierBit = (byte) (carrier[carrierIndex] & MASK_PAYLOAD);
 
             if (payloadBit == carrierBit) {
                 prefixReplaced[prefix] += 1; // si son iguales sumo
             } else {
-                prefixReplaced[prefix] -= 1;
+                prefixReplaced[prefix] -= 1; // si son diferentes resto y remplazo
                 carrier[carrierIndex] = (byte) ((carrier[carrierIndex] & MASK_CARRIER) | payloadBit);
             }
         }
 
         // Pone los headers de que prefijos voy a reeemplazar
-        for(int i = 0, carrierIndex = BYTES_HEADER; i < prefixReplaced.length; i++, carrierIndex++){
+        for(int i = 0, carrierIndex; i < prefixReplaced.length; i++){
+            carrierIndex = i + BYTES_HEADER;
             if(prefixReplaced[i] > 0){
                 carrier[carrierIndex] = (byte) ((carrier[carrierIndex] & MASK_CARRIER) | 1);
             }else{
@@ -47,7 +53,8 @@ public class LSBI implements SteganographyMethod{
         }
 
         // Hacer mas performante
-        for(int i = 0, carrierIndex = BITS_PREFIX + BYTES_HEADER; i < payload.length * BITS_IN_BYTE; i++, carrierIndex++) {
+        for(int i = 0, carrierIndex; i < payload.length * BITS_IN_BYTE; i++) {
+            carrierIndex = i + BYTES_HEADER + BYTES_PREFIX;
             prefix = (byte) ((carrier[carrierIndex] & MASK_PREFIX) >> 1);
 
             if (prefixReplaced[prefix] > 0) {
@@ -66,59 +73,54 @@ public class LSBI implements SteganographyMethod{
     public byte[] extract(byte[] carrier) {
         boolean[] prefixReplaced = {true, true, true, true}; // {00, 01, 10, 11}
 
-        for(int i = 0, carrierIndex = BYTES_HEADER; i< BITS_PREFIX; i++, carrierIndex++){
+        for(int i = 0, carrierIndex = BYTES_HEADER; i< BYTES_PREFIX; i++, carrierIndex++){
             if((carrier[carrierIndex] & MASK_PAYLOAD) == 0){
                 prefixReplaced[i] = false;
             }
         }
 
-        byte[] sizeAux = new byte[BITS_SIZE];
+        byte[] sizeAux = new byte[BYTES_SIZE];
         int k = 0;
-        int i = BITS_PREFIX + BYTES_HEADER;
-        byte MASK_PAYLOAD = (byte) 0b00000001;
-        int bytesNeeded = 8;
-        while (i < (bytesNeeded * BITS_SIZE+ BITS_PREFIX + BYTES_HEADER) ) {
-            byte data;
-            byte prefix;
-            byte payloadByte = 0;
-            for (int j = 0; j < bytesNeeded; j++) {
+        int i = BYTES_PREFIX + BYTES_HEADER;
+        byte prefix, carrierBit, payloadByte;
+        while (i < (BITS_IN_BYTE * BYTES_SIZE + BYTES_PREFIX + BYTES_HEADER) ) {
+            payloadByte = 0;
+            for (int j = 0; j < BITS_IN_BYTE; j++) {
                 prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
                 if (prefixReplaced[prefix]){
-                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - (j + 1)));
+                    carrierBit = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - (j + 1)));
                 }else{
-                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
+                    carrierBit = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
                 }
-                payloadByte = (byte) (payloadByte | data);
+                payloadByte = (byte) (payloadByte | carrierBit);
                 i++;
             }
             sizeAux[k++] = payloadByte;
         }
 
-        int number = ((sizeAux[0] & 0xFF) << 24) | // Byte más significativo
+        int size = ((sizeAux[0] & 0xFF) << 24) | // Byte más significativo
                     ((sizeAux[1] & 0xFF) << 16) | // Segundo byte
                     ((sizeAux[2] & 0xFF) << 8)  | // Tercer byte
                     (sizeAux[3] & 0xFF);         // Byte menos significativo
 
-        byte[] payload = new byte[BITS_SIZE + number];
+        byte[] payload = new byte[BYTES_SIZE + size];
 
-        for(int j = 0; j<BITS_SIZE; j++){
+        for(int j = 0; j< BYTES_SIZE; j++){
             payload[j] = sizeAux[j];
         }
 
-        k = BITS_SIZE;
-        i = BITS_SIZE * BITS_IN_BYTE + BITS_PREFIX + BYTES_HEADER;
-        while (i < (BITS_SIZE + number) * BITS_IN_BYTE + BITS_PREFIX + BYTES_HEADER) {
-            byte data;
-            byte prefix;
-            byte payloadByte = 0;
-            for (int j = 0; j < bytesNeeded; j++) {
+        k = BYTES_SIZE;
+        i = BYTES_SIZE * BITS_IN_BYTE + BYTES_PREFIX + BYTES_HEADER;
+        while (i < (BYTES_SIZE + size) * BITS_IN_BYTE + BYTES_PREFIX + BYTES_HEADER) {
+            payloadByte = 0;
+            for (int j = 0; j < BITS_IN_BYTE; j++) {
                 prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
                 if (prefixReplaced[prefix]){
-                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 -  (j + 1)));
+                    carrierBit = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 -  (j + 1)));
                 }else{
-                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
+                    carrierBit = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
                 }
-                payloadByte = (byte) (payloadByte | data);
+                payloadByte = (byte) (payloadByte | carrierBit);
                 i++;
             }
             payload[k++] = payloadByte;
@@ -130,7 +132,7 @@ public class LSBI implements SteganographyMethod{
     @Override
     public boolean canEmbed(byte[] carrier, byte[] payload) {
         int bitsCarrier = carrier.length * BITS_IN_BYTE; // (carrier.length - PAYLOAD_INDEX) * BITS_IN_BYTE;
-        int bitsPayloadNeeded = ((payload.length * BITS_IN_BYTE) + BITS_PREFIX) * BITS_IN_BYTE;
+        int bitsPayloadNeeded = ((payload.length * BITS_IN_BYTE) + BYTES_PREFIX) * BITS_IN_BYTE;
 
         return bitsPayloadNeeded <= bitsCarrier;
     }
