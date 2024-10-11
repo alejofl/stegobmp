@@ -1,73 +1,62 @@
 package ar.edu.itba.cripto.steganography;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class LSBI implements SteganographyMethod{
-    static private int PAYLOAD_INDEX = 54;
     static private int BITS_IN_BYTE = 8;
-    static private int BITS_INFORMATION = 4;
+    static private int BITS_PREFIX = 4;
     static private int BITS_SIZE = 4;
+    static private byte MASK_PAYLOAD = (byte) 0b00000001;
+    static private byte MASK_PREFIX = (byte) 0b00000110;
+    static private byte MASK_CARRIER = (byte) 0b11111110;
+
     @Override
     public byte[] embed(byte[] carrier, byte[] payload) {
         if(!canEmbed(carrier, payload)){
             throw new IllegalArgumentException();
         }
-
-        System.out.println("\nEntrada:");
-        for (byte b : carrier) {
-            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
-        }
-
         int[] prefixReplaced = {0, 0, 0, 0}; // {00, 01, 10, 11}
+        int prefix;
 
-        for(int i = BITS_INFORMATION; i < payload.length * BITS_IN_BYTE + BITS_INFORMATION; i++) {
-            // 01010101 i*8+5 - i*8+6 - i*8+7
-            int prefix = getBitValue(carrier, i * BITS_IN_BYTE + 6) + getBitValue(carrier, i * BITS_IN_BYTE + 5) * 2;
+        // Arranco desde BITS_PREFIX porque tengo que dejar 4 libres para los prefijos
+        for(int i = BITS_PREFIX; i < payload.length * BITS_IN_BYTE + BITS_PREFIX; i++) {
+            prefix = (byte) ((carrier[i] & MASK_PREFIX) >> 1);
 
-            int payloadBit = getBitValue(payload, i - BITS_INFORMATION);
-            int carrierBit = getBitValue(carrier, i * BITS_IN_BYTE + 7);
+            int byteIndex = (i-BITS_PREFIX) / 8;
+            int bitPosition = 7 - ((i-BITS_PREFIX) % 8);  // De MSB a LSB
+            byte mask = (byte) (1 << bitPosition);
+
+            byte payloadBit = (byte) ((payload[byteIndex] & mask) >> bitPosition);
+            byte carrierBit = (byte) (carrier[i] & MASK_PAYLOAD);
+
             if (payloadBit == carrierBit) {
                 prefixReplaced[prefix] += 1; // si son iguales sumo
             } else {
                 prefixReplaced[prefix] -= 1;
-                replaceBit(carrier, i * BITS_IN_BYTE + 7, payloadBit);
+                carrier[i] = (byte) ((carrier[i] & MASK_CARRIER) | payloadBit);
             }
         }
 
-        System.out.println("\nDespues del LSB1:");
-        for (byte b : carrier) {
-            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
-        }
-
         // Pone los headers de que prefijos voy a reeemplazar
-        // x x x x 101010010202
-        // 00 01 10 11
-        // 1 0 1 1
         for(int i = 0; i < prefixReplaced.length; i++){
             if(prefixReplaced[i] > 0){
-                System.out.println("El prefijo " + i + " entro");
-                replaceBit(carrier, i * BITS_IN_BYTE + 7, 1);
+                carrier[i] = (byte) ((carrier[i] & MASK_CARRIER) | 1);
             }else{
-                replaceBit(carrier, i * BITS_IN_BYTE + 7, 0);
+                carrier[i] = (byte) ((carrier[i] & MASK_CARRIER) | 0);
             }
         }
 
         // Hacer mas performante
-        for(int i = BITS_INFORMATION; i < payload.length * BITS_IN_BYTE + BITS_INFORMATION; i++) {
-            int prefix = getBitValue(carrier, i * BITS_IN_BYTE + 6) + getBitValue(carrier, i * BITS_IN_BYTE + 5) * 2;
+        for(int i = BITS_PREFIX; i < payload.length * BITS_IN_BYTE + BITS_PREFIX; i++) {
+            prefix = (byte) ((carrier[i] & MASK_PREFIX) >> 1);
+
             if (prefixReplaced[prefix] > 0) {
-                if(getBitValue(carrier, i * BITS_IN_BYTE + 7) == 1){
-                    replaceBit(carrier, i * BITS_IN_BYTE + 7, 0);
+                if((carrier[i] & MASK_PAYLOAD) == 1){
+                    carrier[i] = (byte) ((carrier[i] & MASK_CARRIER) | 0);
                 }else{
-                    replaceBit(carrier, i * BITS_IN_BYTE + 7, 1);
+                    carrier[i] = (byte) ((carrier[i] & MASK_CARRIER) | 1);
                 }
             }
-        }
-
-        System.out.println("\nDespues de cambiar los invertir:");
-        for (byte b : carrier) {
-            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
         }
 
         return carrier;
@@ -77,31 +66,27 @@ public class LSBI implements SteganographyMethod{
     public byte[] extract(byte[] carrier) {
         boolean[] prefixReplaced = {true, true, true, true}; // {00, 01, 10, 11}
 
-        for(int i = 0; i<BITS_INFORMATION; i++){
-            int value = getBitValue(carrier, i * BITS_IN_BYTE + 7);
-            if(value == 0){
+        for(int i = 0; i< BITS_PREFIX; i++){
+            if((carrier[i] & MASK_PAYLOAD) == 0){
                 prefixReplaced[i] = false;
             }
         }
 
-        System.out.println(prefixReplaced[0] + " " + prefixReplaced[1] + " " + prefixReplaced[2] + " " + prefixReplaced[3]);
-
         byte[] sizeAux = new byte[BITS_SIZE];
         int k = 0;
-        int i = BITS_INFORMATION;
-        int bitsToHide = 1;
+        int i = BITS_PREFIX;
         byte MASK_PAYLOAD = (byte) 0b00000001;
         int bytesNeeded = 8;
-        while (i < (bytesNeeded * BITS_SIZE+ BITS_INFORMATION) ) {
+        while (i < (bytesNeeded * BITS_SIZE+ BITS_PREFIX) ) {
             byte data;
             byte prefix;
             byte payloadByte = 0;
             for (int j = 0; j < bytesNeeded; j++) {
                 prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
                 if (prefixReplaced[prefix]){
-                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - bitsToHide * (j + 1)));
+                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - (j + 1)));
                 }else{
-                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
+                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
                 }
                 payloadByte = (byte) (payloadByte | data);
                 i++;
@@ -113,9 +98,6 @@ public class LSBI implements SteganographyMethod{
                     ((sizeAux[1] & 0xFF) << 16) | // Segundo byte
                     ((sizeAux[2] & 0xFF) << 8)  | // Tercer byte
                     (sizeAux[3] & 0xFF);         // Byte menos significativo
-        // Mostrar el número
-        System.out.println("El número DWORD es: " + number);
-        System.out.println();
 
         byte[] payload = new byte[BITS_SIZE + number];
 
@@ -124,17 +106,17 @@ public class LSBI implements SteganographyMethod{
         }
 
         k = BITS_SIZE;
-        i = BITS_SIZE * BITS_IN_BYTE + BITS_INFORMATION;
-        while (i < (BITS_SIZE + number) * BITS_IN_BYTE + BITS_INFORMATION ) {
+        i = BITS_SIZE * BITS_IN_BYTE + BITS_PREFIX;
+        while (i < (BITS_SIZE + number) * BITS_IN_BYTE + BITS_PREFIX) {
             byte data;
             byte prefix;
             byte payloadByte = 0;
             for (int j = 0; j < bytesNeeded; j++) {
                 prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
                 if (prefixReplaced[prefix]){
-                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - bitsToHide * (j + 1)));
+                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 -  (j + 1)));
                 }else{
-                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
+                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
                 }
                 payloadByte = (byte) (payloadByte | data);
                 i++;
@@ -148,43 +130,20 @@ public class LSBI implements SteganographyMethod{
     @Override
     public boolean canEmbed(byte[] carrier, byte[] payload) {
         int bitsCarrier = carrier.length * BITS_IN_BYTE; // (carrier.length - PAYLOAD_INDEX) * BITS_IN_BYTE;
-        int bitsPayloadNeeded = ((payload.length * BITS_IN_BYTE) + BITS_INFORMATION) * BITS_IN_BYTE;
+        int bitsPayloadNeeded = ((payload.length * BITS_IN_BYTE) + BITS_PREFIX) * BITS_IN_BYTE;
 
         return bitsPayloadNeeded <= bitsCarrier;
     }
 
-    public static int getBitValue(byte[] array, int bitIndex) {
-        // Calcular el índice del byte en el array y la posición del bit dentro del byte
-        int byteIndex = bitIndex / 8;
-        int bitPosition = 7 - (bitIndex % 8);  // De MSB a LSB
-
-        // Crear la máscara para el bit deseado
-        byte mask = (byte) (1 << bitPosition);
-
-        // Realizar una operación AND entre el byte y la máscara, luego desplazar para obtener el bit como 0 o 1
-        return (array[byteIndex] & mask) != 0 ? 1 : 0;
-    }
-
-    // 010101011 -> 2 y 1 -> 011101011
-    public static void replaceBit(byte[] array, int bitIndex, int newValue) {
-        // Calcular el índice del byte en el array y la posición del bit dentro del byte
-        int byteIndex = bitIndex / 8;
-        int bitPosition = 7 - (bitIndex % 8);  // De MSB a LSB
-
-        // Crear la máscara para el bit a modificar
-        byte mask = (byte) (1 << bitPosition);
-
-        if (newValue == 1) {
-            // Poner el bit en 1 usando OR
-            array[byteIndex] |= mask;
-        } else {
-            // Poner el bit en 0 usando AND con la negación de la máscara
-            array[byteIndex] &= ~mask;
-        }
-    }
-
     public static void main(String[] args) {
         byte[] carrier = {
+                //0,1,2,3,4,5,6,7,8,9,
+                //10,11,12,13,14,15,16,17,18,19,
+                //20,21,22,23,24,25,26,27,28,29,
+                //30,31,32,33,34,35,36,37,38,39,
+                //40,41,42,43,44,45,46,47,48,49,
+                //50,51,52,53,
+
                 // 4 para los prefijos
                 (byte) 0b00000001,
                 (byte) 0b00000001,
@@ -351,11 +310,10 @@ public class LSBI implements SteganographyMethod{
                 (byte) 0b00000000, // 0
                 (byte) 0b00000000, // 0
                 (byte) 0b00000000, // 0
-                (byte) 0b00001010, // 4
+                (byte) 0b00001001, // 4
                 (byte) 0b01101000, // 'h'
                 (byte) 0b01101111, // 'o'
                 (byte) 0b01101100, // 'l'
-                (byte) 0b01100001,  // 'a'
                 (byte) 0b01100001,  // 'a'
                 (byte) 0b00101110, // '.'
                 (byte) 0b01110000, // 'p'
@@ -365,14 +323,15 @@ public class LSBI implements SteganographyMethod{
         };
         LSBI aux = new LSBI();
 
-        //aux.extract(carrier);
-        byte[] carrier_2 = aux.embed(carrier, payload);
-        byte[] salida = aux.extract(carrier_2);
+        byte[] embed = aux.embed(carrier, payload);
+        byte[] plain = aux.extract(embed);
 
-        for (byte b : salida) {
+        for (byte b : plain) {
             System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
         }
-        System.out.println(Arrays.toString(salida));
+        System.out.println(Arrays.toString(plain));
+        String texto = new String(plain);
+        System.out.println(texto);
     }
 
 }
