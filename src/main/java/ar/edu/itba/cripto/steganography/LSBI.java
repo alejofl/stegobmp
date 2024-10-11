@@ -1,6 +1,7 @@
 package ar.edu.itba.cripto.steganography;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class LSBI implements SteganographyMethod{
     static private int PAYLOAD_INDEX = 54;
@@ -20,7 +21,7 @@ public class LSBI implements SteganographyMethod{
 
         int[] prefixReplaced = {0, 0, 0, 0}; // {00, 01, 10, 11}
 
-        for(int i = BITS_INFORMATION; i < carrier.length; i++) {
+        for(int i = BITS_INFORMATION; i < payload.length * BITS_IN_BYTE + BITS_INFORMATION; i++) {
             // 01010101 i*8+5 - i*8+6 - i*8+7
             int prefix = getBitValue(carrier, i * BITS_IN_BYTE + 6) + getBitValue(carrier, i * BITS_IN_BYTE + 5) * 2;
 
@@ -53,7 +54,7 @@ public class LSBI implements SteganographyMethod{
         }
 
         // Hacer mas performante
-        for(int i = BITS_INFORMATION; i < carrier.length; i++) {
+        for(int i = BITS_INFORMATION; i < payload.length * BITS_IN_BYTE + BITS_INFORMATION; i++) {
             int prefix = getBitValue(carrier, i * BITS_IN_BYTE + 6) + getBitValue(carrier, i * BITS_IN_BYTE + 5) * 2;
             if (prefixReplaced[prefix] > 0) {
                 if(getBitValue(carrier, i * BITS_IN_BYTE + 7) == 1){
@@ -83,6 +84,8 @@ public class LSBI implements SteganographyMethod{
             }
         }
 
+        System.out.println(prefixReplaced[0] + " " + prefixReplaced[1] + " " + prefixReplaced[2] + " " + prefixReplaced[3]);
+
         byte[] sizeAux = new byte[BITS_SIZE];
         int k = 0;
         int i = BITS_INFORMATION;
@@ -95,10 +98,11 @@ public class LSBI implements SteganographyMethod{
             byte payloadByte = 0;
             for (int j = 0; j < bytesNeeded; j++) {
                 prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
-                data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
-                //if (!prefixReplaced[prefix]) {
-                //    data = (byte) (data ^ 0b00000001); // uso XOR
-                //}
+                if (prefixReplaced[prefix]){
+                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - bitsToHide * (j + 1)));
+                }else{
+                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
+                }
                 payloadByte = (byte) (payloadByte | data);
                 i++;
             }
@@ -115,21 +119,22 @@ public class LSBI implements SteganographyMethod{
 
         byte[] payload = new byte[BITS_SIZE + number];
 
-        for(int j = 0; i<BITS_SIZE; j++){
+        for(int j = 0; j<BITS_SIZE; j++){
             payload[j] = sizeAux[j];
         }
 
         k = BITS_SIZE;
-        i = BITS_INFORMATION + BITS_SIZE;
-        while (i < number ) {
+        i = BITS_SIZE * BITS_IN_BYTE + BITS_INFORMATION;
+        while (i < (BITS_SIZE + number) * BITS_IN_BYTE + BITS_INFORMATION ) {
             byte data;
             byte prefix;
             byte payloadByte = 0;
             for (int j = 0; j < bytesNeeded; j++) {
                 prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
-                data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
-                if (!prefixReplaced[prefix]) {
-                    data = (byte) (data ^ 0b00000001); // uso XOR
+                if (prefixReplaced[prefix]){
+                    data = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - bitsToHide * (j + 1)));
+                }else{
+                    data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
                 }
                 payloadByte = (byte) (payloadByte | data);
                 i++;
@@ -180,45 +185,13 @@ public class LSBI implements SteganographyMethod{
 
     public static void main(String[] args) {
         byte[] carrier = {
+                // 4 para los prefijos
                 (byte) 0b00000001,
                 (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                // 4 * 8 = 32 bytes para guardar el tamanio
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00001000,
-                (byte) 0b00001000,
-                (byte) 0b00001000,
-                (byte) 0b00000000,
-                (byte) 0b00001000,
-                (byte) 0b00001000,
-                (byte) 0b00001000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
                 (byte) 0b00000001,
                 (byte) 0b00000001,
 
-                // cambiar
+                // 4 para el tamanio
                 (byte) 0b00000000,
                 (byte) 0b00000000,
                 (byte) 0b00000000,
@@ -227,6 +200,7 @@ public class LSBI implements SteganographyMethod{
                 (byte) 0b00001000,
                 (byte) 0b00001000,
                 (byte) 0b00000000,
+
                 (byte) 0b00001000,
                 (byte) 0b00001000,
                 (byte) 0b00001000,
@@ -235,6 +209,7 @@ public class LSBI implements SteganographyMethod{
                 (byte) 0b00000000,
                 (byte) 0b00000000,
                 (byte) 0b00000000,
+
                 (byte) 0b00000000,
                 (byte) 0b00000000,
                 (byte) 0b00000000,
@@ -243,6 +218,7 @@ public class LSBI implements SteganographyMethod{
                 (byte) 0b00000000,
                 (byte) 0b00000000,
                 (byte) 0b00000000,
+
                 (byte) 0b00000000,
                 (byte) 0b00000000,
                 (byte) 0b00000000,
@@ -250,15 +226,153 @@ public class LSBI implements SteganographyMethod{
                 (byte) 0b00000001,
                 (byte) 0b00000000,
                 (byte) 0b00000001,
+                (byte) 0b11111111,
+
+                // texto -> 11 bytes
+                (byte) 0b00011010,
+                (byte) 0b00100100,
+                (byte) 0b01011000,
+                (byte) 0b00001111,
+                (byte) 0b10000001,
+                (byte) 0b11110000,
+                (byte) 0b00010101,
+                (byte) 0b00111010,
+
+                (byte) 0b01100001,
+                (byte) 0b00000000,
+                (byte) 0b00001101,
+                (byte) 0b00011000,
+                (byte) 0b10101010,
+                (byte) 0b01010101,
+                (byte) 0b11001100,
+                (byte) 0b00100010,
+
+                (byte) 0b11111111,
+                (byte) 0b00010000,
+                (byte) 0b01101100,
+                (byte) 0b10001000,
+                (byte) 0b00000011,
+                (byte) 0b11100001,
+                (byte) 0b00001111,
                 (byte) 0b00000001,
+
+                (byte) 0b01010101,
+                (byte) 0b00001111,
+                (byte) 0b11000011,
+                (byte) 0b00111100,
+                (byte) 0b10010010,
+                (byte) 0b01110010,
+                (byte) 0b00000001,
+                (byte) 0b11110000,
+
+                (byte) 0b00101010,
+                (byte) 0b01000100,
+                (byte) 0b00011111,
+                (byte) 0b10000001,
+                (byte) 0b01101110,
+                (byte) 0b00111011,
+                (byte) 0b00000000,
+                (byte) 0b11111100,
+
+                (byte) 0b11001010,
+                (byte) 0b10100101,
+                (byte) 0b01010000,
+                (byte) 0b00111111,
+                (byte) 0b00000010,
+                (byte) 0b01111100,
+                (byte) 0b11110101,
+                (byte) 0b10000000,
+
+                (byte) 0b00000100,
+                (byte) 0b11111110,
+                (byte) 0b00101000,
+                (byte) 0b01011001,
+                (byte) 0b10001110,
+                (byte) 0b01100111,
+                (byte) 0b00001000,
+                (byte) 0b11011000,
+
+                (byte) 0b01011110,
+                (byte) 0b00010010,
+                (byte) 0b10000000,
+                (byte) 0b11001100,
+                (byte) 0b00111101,
+                (byte) 0b10101010,
+                (byte) 0b01101011,
+                (byte) 0b00000001,
+
+                (byte) 0b11110011,
+                (byte) 0b00001001,
+                (byte) 0b01011100,
+                (byte) 0b00100101,
+                (byte) 0b10011010,
+                (byte) 0b00000001,
+                (byte) 0b01111111,
+                (byte) 0b01010100,
+
+                (byte) 0b11110011,
+                (byte) 0b00001001,
+                (byte) 0b01011100,
+                (byte) 0b00100101,
+                (byte) 0b10011010,
+                (byte) 0b00000001,
+                (byte) 0b01111111,
+                (byte) 0b01010100,
+
+                (byte) 0b11110011,
+                (byte) 0b00001001,
+                (byte) 0b01011100,
+                (byte) 0b00100101,
+                (byte) 0b10011010,
+                (byte) 0b00000001,
+                (byte) 0b01111111,
+                (byte) 0b01010100,
+
+                (byte) 0b11110011,
+                (byte) 0b00001001,
+                (byte) 0b01011100,
+                (byte) 0b00100101,
+                (byte) 0b10011010,
+                (byte) 0b00000001,
+                (byte) 0b01111111,
+                (byte) 0b01010100,
+
+                (byte) 0b11110011,
+                (byte) 0b00001001,
+                (byte) 0b01011100,
+                (byte) 0b00100101,
+                (byte) 0b10011010,
+                (byte) 0b00000001,
+                (byte) 0b01111111,
+                (byte) 0b01010100
         };
 
         byte[] payload = {
-                (byte) 0b10010001,
+                (byte) 0b00000000, // 0
+                (byte) 0b00000000, // 0
+                (byte) 0b00000000, // 0
+                (byte) 0b00001010, // 4
+                (byte) 0b01101000, // 'h'
+                (byte) 0b01101111, // 'o'
+                (byte) 0b01101100, // 'l'
+                (byte) 0b01100001,  // 'a'
+                (byte) 0b01100001,  // 'a'
+                (byte) 0b00101110, // '.'
+                (byte) 0b01110000, // 'p'
+                (byte) 0b01101110, // 'n'
+                (byte) 0b01100111, // 'g'
+                (byte) 0b00000000 // '/0'
         };
         LSBI aux = new LSBI();
 
-        aux.extract(carrier);
-        //aux.embed(carrier, payload);
+        //aux.extract(carrier);
+        byte[] carrier_2 = aux.embed(carrier, payload);
+        byte[] salida = aux.extract(carrier_2);
+
+        for (byte b : salida) {
+            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+        }
+        System.out.println(Arrays.toString(salida));
     }
+
 }
