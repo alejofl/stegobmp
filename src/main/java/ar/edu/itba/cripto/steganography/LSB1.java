@@ -27,6 +27,7 @@ public class LSB1 implements SteganographyMethod{
             int sizeBit = carrier[i] & 1;
             payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * SIZE_STORAGE - 1 - i + HEADER_SIZE);
         }
+        System.out.println("pedrooo: " + payloadSize);
         byte[] payload = new byte[(int) (payloadSize + SIZE_STORAGE)];
 
         return carrierExtract(carrier, payload, HEADER_SIZE, BYTES_NEEDED, BITS_TO_HIDE, MASK_PAYLOAD);
@@ -75,12 +76,12 @@ public class LSB1 implements SteganographyMethod{
                 (byte) 0b00000001,
                 (byte) 0b00000001,
                 (byte) 0b00000001,
-                (byte) 0b00000001,
+                (byte) 0b00000000,
 
                 (byte) 0b00000001,
+                (byte) 0b00000000,
                 (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
+                (byte) 0b00000000,
                 (byte) 0b00000001,
                 (byte) 0b00000001,
                 (byte) 0b00000001,
@@ -234,7 +235,7 @@ public class LSB1 implements SteganographyMethod{
                 (byte) 0,
                 (byte) 0,
                 (byte) 0,
-                (byte) 11,
+                (byte) 10,
                 (byte) 0b10010001, // -111
                 (byte) 20,
                 (byte) 127,

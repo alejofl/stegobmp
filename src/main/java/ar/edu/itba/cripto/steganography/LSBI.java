@@ -96,25 +96,48 @@ public class LSBI implements SteganographyMethod{
             for (int j = 0; j < bytesNeeded; j++) {
                 prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
                 data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
-                if (!prefixReplaced[prefix]) {
-                    data = (byte) (data ^ 0b00000001); // uso XOR
-                }
+                //if (!prefixReplaced[prefix]) {
+                //    data = (byte) (data ^ 0b00000001); // uso XOR
+                //}
                 payloadByte = (byte) (payloadByte | data);
                 i++;
             }
             sizeAux[k++] = payloadByte;
         }
 
-        int number = ((sizeAux[3] & 0xFF) << 24) | // Byte más significativo
-                    ((sizeAux[2] & 0xFF) << 16) | // Segundo byte
-                    ((sizeAux[1] & 0xFF) << 8)  | // Tercer byte
-                    (sizeAux[0] & 0xFF);         // Byte menos significativo
-
+        int number = ((sizeAux[0] & 0xFF) << 24) | // Byte más significativo
+                    ((sizeAux[1] & 0xFF) << 16) | // Segundo byte
+                    ((sizeAux[2] & 0xFF) << 8)  | // Tercer byte
+                    (sizeAux[3] & 0xFF);         // Byte menos significativo
         // Mostrar el número
         System.out.println("El número DWORD es: " + number);
         System.out.println();
 
-        return new byte[0];
+        byte[] payload = new byte[BITS_SIZE + number];
+
+        for(int j = 0; i<BITS_SIZE; j++){
+            payload[j] = sizeAux[j];
+        }
+
+        k = BITS_SIZE;
+        i = BITS_INFORMATION + BITS_SIZE;
+        while (i < number ) {
+            byte data;
+            byte prefix;
+            byte payloadByte = 0;
+            for (int j = 0; j < bytesNeeded; j++) {
+                prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
+                data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - bitsToHide * (j + 1)));
+                if (!prefixReplaced[prefix]) {
+                    data = (byte) (data ^ 0b00000001); // uso XOR
+                }
+                payloadByte = (byte) (payloadByte | data);
+                i++;
+            }
+            payload[k++] = payloadByte;
+        }
+
+        return payload;
     }
 
     @Override
@@ -157,46 +180,77 @@ public class LSBI implements SteganographyMethod{
 
     public static void main(String[] args) {
         byte[] carrier = {
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
-                (byte) 0b00000000,
+                (byte) 0b00000001,
+                (byte) 0b00000001,
+                (byte) 0b00000001,
+                (byte) 0b00000001,
                 // 4 * 8 = 32 bytes para guardar el tamanio
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00000001,
-
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00000000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
                 (byte) 0b00000001,
                 (byte) 0b00000000,
+                (byte) 0b00000001,
+                (byte) 0b00000001,
+
+                // cambiar
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00000000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00001000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000000,
+                (byte) 0b00000001,
+                (byte) 0b00000000,
+                (byte) 0b00000001,
+                (byte) 0b00000001,
         };
 
         byte[] payload = {
