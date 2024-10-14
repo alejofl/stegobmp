@@ -42,7 +42,7 @@ public class Main {
                 Path output = FileUtils.createFile(parsed.getOptionValue("out"));
                 FileUtils.writeBytes(output, result);
             } else if (parsed.hasOption("extract")) {
-                byte[] extracted = steganographyMethod.extract(carrier);
+                byte[] extracted = steganographyMethod.extract(carrier, encryptionAlgorithm != EncryptionAlgorithm.NONE);
                 SimpleEntry<byte[], String> data = steganographyMethod.postprocessExtraction(extracted, cryptography);
                 Path output = FileUtils.createFile(parsed.getOptionValue("out") + data.getValue());
                 FileUtils.writeBytes(output, data.getKey());

@@ -70,7 +70,7 @@ public class LSBI implements SteganographyMethod{
     }
 
     @Override
-    public byte[] extract(byte[] carrier) {
+    public byte[] extract(byte[] carrier, boolean isEncrypted) {
         boolean[] prefixReplaced = {true, true, true, true}; // {00, 01, 10, 11}
 
         for(int i = 0, carrierIndex = BYTES_HEADER; i< BYTES_PREFIX; i++, carrierIndex++){
@@ -326,7 +326,7 @@ public class LSBI implements SteganographyMethod{
         LSBI aux = new LSBI();
 
         byte[] embed = aux.embed(carrier, payload);
-        byte[] plain = aux.extract(embed);
+        byte[] plain = aux.extract(embed, false);
 
         for (byte b : plain) {
             System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));

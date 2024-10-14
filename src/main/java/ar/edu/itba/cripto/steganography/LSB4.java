@@ -21,7 +21,7 @@ public class LSB4 implements SteganographyMethod{
     }
 
     @Override
-    public byte[] extract(byte[] carrier) {
+    public byte[] extract(byte[] carrier, boolean isEncrypted) {
         long payloadSize = 0;
 
         for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * SIZE_STORAGE)); i++) {
@@ -132,7 +132,7 @@ public class LSB4 implements SteganographyMethod{
 
         System.out.println("\nVamos a obtener el payload a ver si podemos:");
 
-        byte[] ans = aux.extract(carrier);
+        byte[] ans = aux.extract(carrier, false);
 
         System.out.println(Arrays.toString(ans));
 
