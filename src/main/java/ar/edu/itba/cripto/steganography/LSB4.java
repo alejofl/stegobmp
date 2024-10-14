@@ -2,43 +2,13 @@ package ar.edu.itba.cripto.steganography;
 
 import java.util.Arrays;
 
-public class LSB4 implements SteganographyMethod{
-    static private final int HEADER_SIZE = 54;
-    static private final int SIZE_STORAGE = 4;
-    static private final int BYTES_NEEDED = 2;
-    static private final int BITS_TO_HIDE = 4;
-    static private final byte MASK_PAYLOAD = (byte) 0b00001111;
-    static private final byte MASK_CARRIER = (byte) 0b11110000;
+public class LSB4 extends LSB1 {
 
-    @Override
-    public byte[] embed(byte[] carrier, byte[] payload) {
-
-        if (!canEmbed(carrier, payload)) {
-            throw new IllegalArgumentException();
-        }
-
-        return carrierTransform(carrier, payload, HEADER_SIZE, BYTES_NEEDED, BITS_TO_HIDE, MASK_PAYLOAD, MASK_CARRIER);
-    }
-
-    @Override
-    public byte[] extract(byte[] carrier, boolean isEncrypted) {
-        long payloadSize = 0;
-
-        for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * SIZE_STORAGE)); i++) {
-            int sizeBit = carrier[i] & 15;
-            payloadSize += (long) sizeBit * (int) Math.pow(2, BYTES_NEEDED * SIZE_STORAGE - 1 - i + HEADER_SIZE);
-        }
-        byte[] payload = new byte[(int) (payloadSize + SIZE_STORAGE)];
-
-        return carrierExtract(carrier, payload, HEADER_SIZE, BYTES_NEEDED, BITS_TO_HIDE, MASK_PAYLOAD);
-    }
-
-    @Override
-    public boolean canEmbed(byte[] carrier, byte[] payload) {
-        long carrierBytes = carrier.length - HEADER_SIZE;
-        long payloadBytesNeeded = (long) payload.length * BYTES_NEEDED;
-
-        return payloadBytesNeeded <= carrierBytes;
+    public LSB4() {
+        this.BYTES_NEEDED = 2;
+        this.BITS_TO_HIDE = 4;
+        this.MASK_PAYLOAD = (byte) 0b00001111;
+        this.MASK_CARRIER = (byte) 0b11110000;
     }
 
     public static void main(String[] args) {
@@ -111,6 +81,9 @@ public class LSB4 implements SteganographyMethod{
                 (byte) 1,
         };
         LSB4 aux = new LSB4();
+
+        System.out.println("LSB4 " + aux.BYTES_NEEDED);
+
         // Mostrar los arrays originales
         System.out.println("Carrier original:");
         for (byte b : carrier) {
@@ -135,6 +108,5 @@ public class LSB4 implements SteganographyMethod{
         byte[] ans = aux.extract(carrier, false);
 
         System.out.println(Arrays.toString(ans));
-
     }
 }

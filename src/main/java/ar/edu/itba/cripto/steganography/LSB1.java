@@ -4,33 +4,61 @@ import java.util.Arrays;
 
 public class LSB1 implements SteganographyMethod{
     static private final int HEADER_SIZE = 54;
-    static private final int SIZE_STORAGE = 4;
-    static private final int BYTES_NEEDED = 8;
-    static private final int BITS_TO_HIDE = 1;
-    static private final byte MASK_PAYLOAD = (byte) 0b00000001;
-    static private final byte MASK_CARRIER = (byte) 0b11111110;
+    static private final int PAYLOAD_LENGTH_SIZE = 4;
+    protected int BYTES_NEEDED;
+    protected int BITS_TO_HIDE;
+    protected byte MASK_PAYLOAD;
+    protected byte MASK_CARRIER;
+
+    public LSB1() {
+        this.BYTES_NEEDED = 8;
+        this.BITS_TO_HIDE = 1;
+        this.MASK_PAYLOAD = (byte) 0b00000001;
+        this.MASK_CARRIER = (byte) 0b11111110;
+    }
 
     public byte[] embed(byte[] carrier, byte[] payload) {
-
         if (!canEmbed(carrier, payload)) {
             throw new IllegalArgumentException();
         }
 
-        return carrierTransform(carrier, payload, HEADER_SIZE, BYTES_NEEDED, BITS_TO_HIDE, MASK_PAYLOAD, MASK_CARRIER);
+        int i = HEADER_SIZE;
+        int k = 0;
+        byte payloadByte;
+        while(i < HEADER_SIZE + (payload.length * BYTES_NEEDED)) {
+            for (int j = 0; j < BYTES_NEEDED; j++) {
+                payloadByte = (byte) (payload[k] >> (8 - BITS_TO_HIDE * (j + 1)));
+                payloadByte = (byte) (payloadByte & MASK_PAYLOAD);
+                carrier[i] = (byte) ((carrier[i] & MASK_CARRIER) | payloadByte);
+                i++;
+            }
+            k++;
+        }
+        return carrier;
     }
 
     @Override
     public byte[] extract(byte[] carrier, boolean isEncrypted) {
         long payloadSize = 0;
 
-        for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * SIZE_STORAGE)); i++) {
+        for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * PAYLOAD_LENGTH_SIZE)); i++) {
             int sizeBit = carrier[i] & 1;
-            payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * SIZE_STORAGE - 1 - i + HEADER_SIZE);
+            payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * PAYLOAD_LENGTH_SIZE - 1 - i + HEADER_SIZE);
         }
-        System.out.println("pedrooo: " + payloadSize);
-        byte[] payload = new byte[(int) (payloadSize + SIZE_STORAGE)];
+        byte[] payload = new byte[(int) (payloadSize + PAYLOAD_LENGTH_SIZE)];
 
-        return carrierExtract(carrier, payload, HEADER_SIZE, BYTES_NEEDED, BITS_TO_HIDE, MASK_PAYLOAD);
+        int i = HEADER_SIZE;
+        int k = 0;
+        while (i < (HEADER_SIZE + BYTES_NEEDED * payload.length)) {
+            byte payloadByte = 0;
+            for (int j = 0; j < BYTES_NEEDED; j++) {
+                byte data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - BITS_TO_HIDE * (j + 1)));
+                payloadByte = (byte) (payloadByte | data);
+                i++;
+            }
+            payload[k++] = payloadByte;
+        }
+        return payload;
     }
 
     @Override
@@ -250,6 +278,9 @@ public class LSB1 implements SteganographyMethod{
 
         };
         LSB1 aux = new LSB1();
+
+        System.out.println("LSB1 " + aux.BYTES_NEEDED);
+
         // Mostrar los arrays originales
         System.out.println("Carrier original:");
         for (byte b : carrier) {
