@@ -1,5 +1,6 @@
 package ar.edu.itba.cripto.steganography;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 public class LSB4 extends LSB1 {
@@ -11,7 +12,7 @@ public class LSB4 extends LSB1 {
         this.MASK_CARRIER = (byte) 0b11110000;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         byte[] carrier = {
                 0,1,2,3,4,5,6,7,8,9,
                 0,1,2,3,4,5,6,7,8,9,
@@ -20,45 +21,10 @@ public class LSB4 extends LSB1 {
                 0,1,2,3,4,5,6,7,8,9,
                 0,1,2,3,
 
-                // 4 * 2 = 8 bytes para guardar el tamanio
-                (byte) 0b11110001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00000001,
-
-                // 1 byte se guardan en 2 bytes
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b01000001,
-                (byte) 0b00100000,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
         };
 
@@ -79,6 +45,15 @@ public class LSB4 extends LSB1 {
                 (byte) 0,
                 (byte) 69,
                 (byte) 1,
+                (byte) '.', // 0b0010 1110
+                (byte) 'a', //ASCII 97 0b0110 0001
+                (byte) 'a',
+                (byte) 'a',
+                (byte) 'a',
+                (byte) 'a',
+                (byte) 'a',
+                (byte) 'a',
+                (byte) '\0',
         };
         LSB4 aux = new LSB4();
 

@@ -1,5 +1,9 @@
 package ar.edu.itba.cripto.steganography;
 
+import javax.xml.crypto.Data;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
 public class LSB1 implements SteganographyMethod{
@@ -24,7 +28,8 @@ public class LSB1 implements SteganographyMethod{
 
         int i = HEADER_SIZE;
         int k = 0;
-        byte payloadByte;
+        byte payloadByte = 0;
+        long calculo = HEADER_SIZE + (payload.length * BYTES_NEEDED);
         while(i < HEADER_SIZE + (payload.length * BYTES_NEEDED)) {
             for (int j = 0; j < BYTES_NEEDED; j++) {
                 payloadByte = (byte) (payload[k] >> (8 - BITS_TO_HIDE * (j + 1)));
@@ -38,27 +43,56 @@ public class LSB1 implements SteganographyMethod{
     }
 
     @Override
-    public byte[] extract(byte[] carrier, boolean isEncrypted) {
+    public byte[] extract(byte[] carrier, boolean isEncrypted) throws IOException {
         long payloadSize = 0;
 
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        DataOutputStream writer = new DataOutputStream(output);
+
         for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * PAYLOAD_LENGTH_SIZE)); i++) {
-            int sizeBit = carrier[i] & 1;
+            int sizeBit = carrier[i] & MASK_PAYLOAD;
             payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * PAYLOAD_LENGTH_SIZE - 1 - i + HEADER_SIZE);
         }
-        byte[] payload = new byte[(int) (payloadSize + PAYLOAD_LENGTH_SIZE)];
 
         int i = HEADER_SIZE;
-        int k = 0;
-        while (i < (HEADER_SIZE + BYTES_NEEDED * payload.length)) {
-            byte payloadByte = 0;
-            for (int j = 0; j < BYTES_NEEDED; j++) {
-                byte data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - BITS_TO_HIDE * (j + 1)));
-                payloadByte = (byte) (payloadByte | data);
-                i++;
-            }
-            payload[k++] = payloadByte;
+        byte payloadByte = 0;
+        while (i < (HEADER_SIZE + BYTES_NEEDED * (payloadSize + PAYLOAD_LENGTH_SIZE))) {
+            payloadByte = cicle(carrier, i);
+            i += BYTES_NEEDED;
+//            payloadByte = 0;
+//            for (int j = 0; j < BYTES_NEEDED; j++) {
+//                byte data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - BITS_TO_HIDE * (j + 1)));
+//                payloadByte = (byte) (payloadByte | data);
+//                i++;
+//            }
+            writer.write(payloadByte);
         }
-        return payload;
+
+        if (!isEncrypted) {
+            while (i < carrier.length && payloadByte != 0) {
+                payloadByte = cicle(carrier, i);
+                i += BYTES_NEEDED;
+//                payloadByte = 0;
+//                for (int j = 0; j < BYTES_NEEDED; j++) {
+//                    byte data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - BITS_TO_HIDE * (j + 1)));
+//                    payloadByte = (byte) (payloadByte | data);
+//                    i++;
+//                }
+                writer.write(payloadByte);
+            }
+        }
+
+        return output.toByteArray();
+    }
+
+    protected byte cicle(byte[] carrier, int indexCarrier) {
+        byte payloadByte = 0;
+        for (int j = 0; j < BYTES_NEEDED; j++) {
+            byte data = (byte) ((carrier[indexCarrier] & MASK_PAYLOAD) << (8 - BITS_TO_HIDE * (j + 1)));
+            payloadByte = (byte) (payloadByte | data);
+            indexCarrier++;
+        }
+        return payloadByte;
     }
 
     @Override
@@ -69,7 +103,7 @@ public class LSB1 implements SteganographyMethod{
         return payloadBytesNeeded <= carrierBytes;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         byte[] carrier = {
                 0,1,2,3,4,5,6,7,8,9,
                 0,1,2,3,4,5,6,7,8,9,
@@ -78,203 +112,34 @@ public class LSB1 implements SteganographyMethod{
                 0,1,2,3,4,5,6,7,8,9,
                 0,1,2,3,
 
-                // 4 * 8 = 32 bytes para guardar el tamanio
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00000001,
-
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00001001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-
-                // 12 bytes de un dato de 1byte=8bits Uso solamente 8 bytes del carrier
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b01000001,
-                (byte) 0b00100000,
-                (byte) 0b00010001,
-                (byte) 0b00001000,
-                (byte) 0b00000101,
-                (byte) 0b00000010,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-
-                (byte) 0b00000001,
-                (byte) 0b00000000,
-                (byte) 0b00000001,
-                (byte) 0b00000000,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         };
 
         // Array de bytes cuyos últimos bits se modificarán
         byte[] payload = {
-                (byte) 0,
-                (byte) 0,
-                (byte) 0,
-                (byte) 10,
-                (byte) 0b10010001, // -111
-                (byte) 20,
-                (byte) 127,
-                (byte) 128, // -> Al ser 0b10000000 entonces tenemos que es -128
-                (byte) 129, // -> Al ser 0b10000001 entonces tenemos que es -127
-                (byte) 16,
-                (byte) 40,
-                (byte) 255, // -> Al ser 0b11111111 entonces tenemos que es -1
-                (byte) 0,
-                (byte) 69,
-                (byte) 1,
+                (byte) 0, // 54
+                (byte) 0, // 62
+                (byte) 0, // 70
+                (byte) 10, // 78
+                (byte) 0b10010001, // -111 pos 86
+                (byte) 20,  // 94
+                (byte) 127, //102
+                (byte) 128, // -> Al ser 0b10000000 entonces tenemos que es -128  POS 110
+                (byte) 129, // -> Al ser 0b10000001 entonces tenemos que es -127  POS 118
+                (byte) 16, // 126
+                (byte) 40, // 134
+                (byte) 255, // -> Al ser 0b11111111 entonces tenemos que es -1 POS 142
+                (byte) 0, // 150
+                (byte) 69, //158
+                (byte) '.', // 166 //0b0010 1110
+                (byte) 'a', //ASCII 97 0b0110 0001 QUE ES  174
+                (byte) 'a', // 182
+                (byte) 'a', // 190
+                (byte) 'a', //198
+                (byte) '\0', // 206
 
         };
         LSB1 aux = new LSB1();
@@ -296,8 +161,10 @@ public class LSB1 implements SteganographyMethod{
 
         // Mostrar el carrier final modificado
         System.out.println("\nCarrier final modificado:");
+        int i = 0;
         for (byte b : carrier) {
-            System.out.println(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+            System.out.println(i + String.format("- %8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+            i++;
         }
 
         System.out.println("\nVamos a obtener el payload a ver si podemos:");

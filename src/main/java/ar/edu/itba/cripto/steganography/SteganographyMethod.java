@@ -15,7 +15,7 @@ import java.util.Arrays;
 public interface SteganographyMethod {
     byte[] embed(byte[] carrier, byte[] payload);
 
-    byte[] extract(byte[] carrier, boolean isEncrypted);
+    byte[] extract(byte[] carrier, boolean isEncrypted) throws IOException;
 
     boolean canEmbed(byte[] carrier, byte[] payload);
 
