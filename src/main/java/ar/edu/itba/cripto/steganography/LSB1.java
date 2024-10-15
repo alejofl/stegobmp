@@ -51,33 +51,19 @@ public class LSB1 implements SteganographyMethod{
 
         for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * PAYLOAD_LENGTH_SIZE)); i++) {
             int sizeBit = carrier[i] & MASK_PAYLOAD;
-            payloadSize += sizeBit * (int) Math.pow(2, BYTES_NEEDED * PAYLOAD_LENGTH_SIZE - 1 - i + HEADER_SIZE);
+            payloadSize += (long) sizeBit * (int) Math.pow(2, BYTES_NEEDED * PAYLOAD_LENGTH_SIZE - 1 - i + HEADER_SIZE);
         }
 
         int i = HEADER_SIZE;
         byte payloadByte = 0;
-        while (i < (HEADER_SIZE + BYTES_NEEDED * (payloadSize + PAYLOAD_LENGTH_SIZE))) {
+        for ( ; i < (HEADER_SIZE + BYTES_NEEDED * (payloadSize + PAYLOAD_LENGTH_SIZE)); i += BYTES_NEEDED) {
             payloadByte = cicle(carrier, i);
-            i += BYTES_NEEDED;
-//            payloadByte = 0;
-//            for (int j = 0; j < BYTES_NEEDED; j++) {
-//                byte data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - BITS_TO_HIDE * (j + 1)));
-//                payloadByte = (byte) (payloadByte | data);
-//                i++;
-//            }
             writer.write(payloadByte);
         }
 
         if (!isEncrypted) {
-            while (i < carrier.length && payloadByte != 0) {
+            for ( ; i < carrier.length && payloadByte != 0; i += BYTES_NEEDED) {
                 payloadByte = cicle(carrier, i);
-                i += BYTES_NEEDED;
-//                payloadByte = 0;
-//                for (int j = 0; j < BYTES_NEEDED; j++) {
-//                    byte data = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - BITS_TO_HIDE * (j + 1)));
-//                    payloadByte = (byte) (payloadByte | data);
-//                    i++;
-//                }
                 writer.write(payloadByte);
             }
         }
