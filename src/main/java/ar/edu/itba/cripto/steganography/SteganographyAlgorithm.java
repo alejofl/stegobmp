@@ -10,13 +10,13 @@ public enum SteganographyAlgorithm {
     LSB4{
         @Override
         public SteganographyMethod getInstance() {
-            return new LSB1();
+            return new LSB4();
         }
     },
     LSBI{
         @Override
         public SteganographyMethod getInstance() {
-            return new LSB1();
+            return new LSBI();
         }
     };
 
