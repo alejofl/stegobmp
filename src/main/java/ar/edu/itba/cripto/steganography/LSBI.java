@@ -1,19 +1,22 @@
 package ar.edu.itba.cripto.steganography;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
-public class LSBI implements SteganographyMethod{
-    static private int BYTES_HEADER = 54;
-    static private int BITS_IN_BYTE = 8;
-    static private int BYTES_PREFIX = 4;
-    static private int BYTES_SIZE = 4;
-    static private byte MASK_PAYLOAD = (byte) 0b00000001;
-    static private byte MASK_PREFIX = (byte) 0b00000110;
-    static private byte MASK_CARRIER = (byte) 0b11111110;
+public class LSBI implements SteganographyMethod {
+    static final private int BYTES_HEADER = 54;
+    static final private int BITS_IN_BYTE = 8;
+    static final private int BYTES_PREFIX = 4;
+    static final private int BYTES_SIZE = 4;
+    static final private byte MASK_PAYLOAD = (byte) 0b00000001;
+    static final private byte MASK_PREFIX = (byte) 0b00000110;
+    static final private byte MASK_CARRIER = (byte) 0b11111110;
 
     @Override
     public byte[] embed(byte[] carrier, byte[] payload) {
-        if(!canEmbed(carrier, payload)){
+        if (!canEmbed(carrier, payload)) {
             throw new IllegalArgumentException();
         }
 
@@ -23,6 +26,10 @@ public class LSBI implements SteganographyMethod{
         int byteIndex, bitPosition;
         byte mask, payloadBit, carrierBit;
         for(int i = 0, carrierIndex; i < payload.length * BITS_IN_BYTE; i++) {
+            if (i % 3 == 2) {
+                continue;
+            }
+
             carrierIndex = i + BYTES_HEADER + BYTES_PREFIX;
 
             prefix = (byte) ((carrier[carrierIndex] & MASK_PREFIX) >> 1);
@@ -44,6 +51,10 @@ public class LSBI implements SteganographyMethod{
 
         // Pone los headers de que prefijos voy a reeemplazar
         for(int i = 0, carrierIndex; i < prefixReplaced.length; i++){
+            if (i % 3 == 2) {
+                continue;
+            }
+
             carrierIndex = i + BYTES_HEADER;
             if(prefixReplaced[i] > 0){
                 carrier[carrierIndex] = (byte) ((carrier[carrierIndex] & MASK_CARRIER) | 1);
@@ -54,6 +65,10 @@ public class LSBI implements SteganographyMethod{
 
         // Hacer mas performante
         for(int i = 0, carrierIndex; i < payload.length * BITS_IN_BYTE; i++) {
+            if (i % 3 == 2) {
+                continue;
+            }
+
             carrierIndex = i + BYTES_HEADER + BYTES_PREFIX;
             prefix = (byte) ((carrier[carrierIndex] & MASK_PREFIX) >> 1);
 
@@ -70,30 +85,40 @@ public class LSBI implements SteganographyMethod{
     }
 
     @Override
-    public byte[] extract(byte[] carrier, boolean isEncrypted) {
+    public byte[] extract(byte[] carrier, boolean isEncrypted) throws IOException {
         boolean[] prefixReplaced = {true, true, true, true}; // {00, 01, 10, 11}
+        int carrierIndex = BYTES_HEADER;
 
-        for(int i = 0, carrierIndex = BYTES_HEADER; i< BYTES_PREFIX; i++, carrierIndex++){
-            if((carrier[carrierIndex] & MASK_PAYLOAD) == 0){
-                prefixReplaced[i] = false;
+        for (int k = 0; k < BYTES_PREFIX; carrierIndex++) {
+            if ((carrierIndex - BYTES_HEADER) % 3 == 2) {
+                continue;
+            }
+
+            if ((carrier[carrierIndex] & MASK_PAYLOAD) == 0) {
+                prefixReplaced[k++] = false;
             }
         }
 
         byte[] sizeAux = new byte[BYTES_SIZE];
-        int k = 0;
-        int i = BYTES_PREFIX + BYTES_HEADER;
         byte prefix, carrierBit, payloadByte;
-        while (i < (BITS_IN_BYTE * BYTES_SIZE + BYTES_PREFIX + BYTES_HEADER) ) {
+        int k = 0;
+        while (k < 4) {
             payloadByte = 0;
-            for (int j = 0; j < BITS_IN_BYTE; j++) {
-                prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
-                if (prefixReplaced[prefix]){
-                    carrierBit = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 - (j + 1)));
-                }else{
-                    carrierBit = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
+            for (int j = 0; j < BITS_IN_BYTE; ) {
+                if ((carrierIndex - BYTES_HEADER) % 3 == 2) {
+                    carrierIndex++;
+                    continue;
+                }
+
+                prefix = (byte) ((carrier[carrierIndex] & 0b00000110) >> 1);
+                if (prefixReplaced[prefix]) {
+                    carrierBit = (byte) (((carrier[carrierIndex] & MASK_PAYLOAD) ^ 0b00000001) << (8 - (j + 1)));
+                } else {
+                    carrierBit = (byte) ((carrier[carrierIndex] & MASK_PAYLOAD) << (8 - (j + 1)));
                 }
                 payloadByte = (byte) (payloadByte | carrierBit);
-                i++;
+                j++;
+                carrierIndex++;
             }
             sizeAux[k++] = payloadByte;
         }
@@ -103,41 +128,70 @@ public class LSBI implements SteganographyMethod{
                     ((sizeAux[2] & 0xFF) << 8)  | // Tercer byte
                     (sizeAux[3] & 0xFF);         // Byte menos significativo
 
-        byte[] payload = new byte[BYTES_SIZE + size];
+        System.out.println("Size: " + size);
 
-        for(int j = 0; j< BYTES_SIZE; j++){
-            payload[j] = sizeAux[j];
-        }
+//        byte[] payload = new byte[BYTES_SIZE + size];
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        DataOutputStream writer = new DataOutputStream(output);
+        writer.write(sizeAux);
 
-        k = BYTES_SIZE;
-        i = BYTES_SIZE * BITS_IN_BYTE + BYTES_PREFIX + BYTES_HEADER;
-        while (i < (BYTES_SIZE + size) * BITS_IN_BYTE + BYTES_PREFIX + BYTES_HEADER) {
+        int readBytesFromPayload = 0;
+        while (readBytesFromPayload < size) {
             payloadByte = 0;
-            for (int j = 0; j < BITS_IN_BYTE; j++) {
-                prefix = (byte) ((carrier[i] & 0b00000110) >> 1);
-                if (prefixReplaced[prefix]){
-                    carrierBit = (byte) (((carrier[i] & MASK_PAYLOAD) ^ 0b00000001) << (8 -  (j + 1)));
-                }else{
-                    carrierBit = (byte) ((carrier[i] & MASK_PAYLOAD) << (8 - (j + 1)));
+            for (int j = 0; j < BITS_IN_BYTE; ) {
+                if ((carrierIndex - BYTES_HEADER) % 3 == 2) {
+                    carrierIndex++;
+                    continue;
+                }
+
+                prefix = (byte) ((carrier[carrierIndex] & 0b00000110) >> 1);
+                if (prefixReplaced[prefix]) {
+                    carrierBit = (byte) (((carrier[carrierIndex] & MASK_PAYLOAD) ^ 0b00000001) << (8 -  (j + 1)));
+                } else {
+                    carrierBit = (byte) ((carrier[carrierIndex] & MASK_PAYLOAD) << (8 - (j + 1)));
                 }
                 payloadByte = (byte) (payloadByte | carrierBit);
-                i++;
+                j++;
+                carrierIndex++;
             }
-            payload[k++] = payloadByte;
+            writer.writeByte(payloadByte);
+            readBytesFromPayload++;
         }
 
-        return payload;
+        if (!isEncrypted) {
+            do {
+                payloadByte = 0;
+                for (int j = 0; j < BITS_IN_BYTE; ) {
+                    if ((carrierIndex - BYTES_HEADER) % 3 == 2) {
+                        carrierIndex++;
+                        continue;
+                    }
+
+                    prefix = (byte) ((carrier[carrierIndex] & 0b00000110) >> 1);
+                    if (prefixReplaced[prefix]) {
+                        carrierBit = (byte) (((carrier[carrierIndex] & MASK_PAYLOAD) ^ 0b00000001) << (8 -  (j + 1)));
+                    } else {
+                        carrierBit = (byte) ((carrier[carrierIndex] & MASK_PAYLOAD) << (8 - (j + 1)));
+                    }
+                    payloadByte = (byte) (payloadByte | carrierBit);
+                    j++;
+                    carrierIndex++;
+                }
+                writer.writeByte(payloadByte);
+            } while (payloadByte != 0);
+        }
+
+        return output.toByteArray();
     }
 
     @Override
     public boolean canEmbed(byte[] carrier, byte[] payload) {
-        int bitsCarrier = carrier.length * BITS_IN_BYTE; // (carrier.length - PAYLOAD_INDEX) * BITS_IN_BYTE;
-        int bitsPayloadNeeded = ((payload.length * BITS_IN_BYTE) + BYTES_PREFIX) * BITS_IN_BYTE;
-
-        return bitsPayloadNeeded <= bitsCarrier;
+        int carrierAvailableSize = (carrier.length - BYTES_HEADER) * 2 / 3;
+        int payloadSize = payload.length + BYTES_PREFIX + BYTES_SIZE;
+        return carrierAvailableSize >= payloadSize;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         byte[] carrier = {
                 0,1,2,3,4,5,6,7,8,9,
                 10,11,12,13,14,15,16,17,18,19,
