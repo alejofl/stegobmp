@@ -12,7 +12,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 
 public class Cryptography {
-    private static final String KEY_ALGORITHM = "PBKDF2WithHmacSHA1";
+    private static final String KEY_ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final byte[] SALT = new byte[8];
     private static final int ITERATIONS = 10000;
 
@@ -51,9 +51,11 @@ public class Cryptography {
     private SimpleEntry<byte[], byte[]> getKeyAndIV(String password, int keySize, int ivSize) throws NoSuchAlgorithmException, InvalidKeySpecException {
         SecretKeyFactory factory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
         PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), SALT, ITERATIONS, keySize + ivSize);
+        int keyBytes = keySize / 8;
+        int ivBytes = ivSize / 8;
         byte[] hash = factory.generateSecret(spec).getEncoded();
-        byte[] key = Arrays.copyOf(hash, keySize);
-        byte[] iv = Arrays.copyOfRange(hash, keySize, keySize + ivSize);
+        byte[] key = Arrays.copyOf(hash, keyBytes);
+        byte[] iv = Arrays.copyOfRange(hash, keyBytes, keyBytes + ivBytes);
         return new SimpleEntry<>(key, iv);
     }
 

@@ -95,8 +95,6 @@ public class LSBI implements SteganographyMethod {
             }
         }
 
-        System.out.println("CARRIER INDEX: " + carrierIndex);
-
         byte[] sizeAux = new byte[BYTES_SIZE];
         byte prefix, carrierBit, payloadByte;
         int k = 0;
