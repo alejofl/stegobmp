@@ -25,12 +25,10 @@ public class LSBI implements SteganographyMethod {
         int prefix;
         int byteIndex, bitPosition;
         byte mask, payloadBit, carrierBit;
-        for(int i = 0, carrierIndex; i < payload.length * BITS_IN_BYTE; i++) {
-            if (i % 3 == 2) {
+        for(int i = 0, carrierIndex = BYTES_HEADER + BYTES_PREFIX; i < payload.length * BITS_IN_BYTE; carrierIndex++) {
+            if ((carrierIndex - BYTES_HEADER) % 3 == 2) {
                 continue;
             }
-
-            carrierIndex = i + BYTES_HEADER + BYTES_PREFIX;
 
             prefix = (byte) ((carrier[carrierIndex] & MASK_PREFIX) >> 1);
 
@@ -47,14 +45,12 @@ public class LSBI implements SteganographyMethod {
                 prefixReplaced[prefix] -= 1; // si son diferentes resto y remplazo
                 carrier[carrierIndex] = (byte) ((carrier[carrierIndex] & MASK_CARRIER) | payloadBit);
             }
+
+            i++;
         }
 
         // Pone los headers de que prefijos voy a reeemplazar
         for(int i = 0, carrierIndex; i < prefixReplaced.length; i++){
-            if (i % 3 == 2) {
-                continue;
-            }
-
             carrierIndex = i + BYTES_HEADER;
             if(prefixReplaced[i] > 0){
                 carrier[carrierIndex] = (byte) ((carrier[carrierIndex] & MASK_CARRIER) | 1);
@@ -64,12 +60,11 @@ public class LSBI implements SteganographyMethod {
         }
 
         // Hacer mas performante
-        for(int i = 0, carrierIndex; i < payload.length * BITS_IN_BYTE; i++) {
-            if (i % 3 == 2) {
+        for(int i = 0, carrierIndex = BYTES_HEADER + BYTES_PREFIX; i < payload.length * BITS_IN_BYTE; carrierIndex++) {
+            if ((carrierIndex - BYTES_HEADER) % 3 == 2) {
                 continue;
             }
 
-            carrierIndex = i + BYTES_HEADER + BYTES_PREFIX;
             prefix = (byte) ((carrier[carrierIndex] & MASK_PREFIX) >> 1);
 
             if (prefixReplaced[prefix] > 0) {
@@ -79,6 +74,8 @@ public class LSBI implements SteganographyMethod {
                     carrier[carrierIndex] = (byte) ((carrier[carrierIndex] & MASK_CARRIER) | 1);
                 }
             }
+
+            i++;
         }
 
         return carrier;
@@ -179,8 +176,8 @@ public class LSBI implements SteganographyMethod {
 
     @Override
     public boolean canEmbed(byte[] carrier, byte[] payload) {
-        int carrierAvailableSize = (carrier.length - BYTES_HEADER) * 2 / 3;
-        int payloadSize = payload.length + BYTES_PREFIX + BYTES_SIZE;
+        int carrierAvailableSize = (carrier.length - BYTES_HEADER - BYTES_PREFIX) * 2 / 3;
+        int payloadSize = payload.length + BYTES_SIZE;
         return carrierAvailableSize >= payloadSize;
     }
 
