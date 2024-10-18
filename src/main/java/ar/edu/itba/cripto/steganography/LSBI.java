@@ -89,15 +89,13 @@ public class LSBI implements SteganographyMethod {
         boolean[] prefixReplaced = {true, true, true, true}; // {00, 01, 10, 11}
         int carrierIndex = BYTES_HEADER;
 
-        for (int k = 0; k < BYTES_PREFIX; carrierIndex++) {
-            if ((carrierIndex - BYTES_HEADER) % 3 == 2) {
-                continue;
-            }
-
+        for (int k = 0; k < BYTES_PREFIX; carrierIndex++, k++) {
             if ((carrier[carrierIndex] & MASK_PAYLOAD) == 0) {
-                prefixReplaced[k++] = false;
+                prefixReplaced[k] = false;
             }
         }
+
+        System.out.println("CARRIER INDEX: " + carrierIndex);
 
         byte[] sizeAux = new byte[BYTES_SIZE];
         byte prefix, carrierBit, payloadByte;
@@ -128,9 +126,6 @@ public class LSBI implements SteganographyMethod {
                     ((sizeAux[2] & 0xFF) << 8)  | // Tercer byte
                     (sizeAux[3] & 0xFF);         // Byte menos significativo
 
-        System.out.println("Size: " + size);
-
-//        byte[] payload = new byte[BYTES_SIZE + size];
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         DataOutputStream writer = new DataOutputStream(output);
         writer.write(sizeAux);
