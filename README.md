@@ -52,7 +52,7 @@ The following options are available:
 
 * `-embed`: Indicates that the program should embed a message in an image.
 * `-extract`: Indicates that the program should extract a message from an image.
-* `-in <file>`: Specifies the input file path to hide. **Required for extraction mode**.
+* `-in <file>`: Specifies the input file path to hide. **Required for embedding mode**.
 * `-p <file>`: Specifies the carrier image path. **Required for both modes**.
 * `-out <file>`: Specifies the output file path. **Required for both modes**.
 * `-steg <mode>`: Specifies the steganography method. Available options are `LSB1`, `LSB4` and `LSBI`. **Required for both modes**.
