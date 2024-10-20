@@ -7,7 +7,7 @@ This project is a steganography tool that allows you to hide messages in 24-bit 
 The program supports three different steganography methods:
 * **LSB1**: Hides one bit of the message in the least significant bit of the image.
 * **LSB4**: Hides four bits of the message in the least significant bits of the image.
-* **LSBI**: Improvement of LSB1 method proposed by TODO
+* **[LSBI](https://www.jatit.org/volumes/Vol80No2/16Vol80No2.pdf)**: Improvement of LSB1 method proposed by MOHAMMED ABDUL MAJEED & ROSSILAWATI SULAIMAN.
 
 The program also supports encryption of the message before hiding it in the image. The following encryption algorithms are available:
 * **AES**: Advanced Encryption Standard. Available key sizes are 128, 192 and 256 bits.
