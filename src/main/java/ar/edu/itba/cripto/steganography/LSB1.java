@@ -63,6 +63,7 @@ public class LSB1 implements SteganographyMethod{
         }
 
         if (!isEncrypted) {
+            payloadByte = 1;
             for ( ; i < carrier.length && payloadByte != 0; i += BYTES_NEEDED) {
                 payloadByte = cicle(carrier, i);
                 writer.write(payloadByte);
