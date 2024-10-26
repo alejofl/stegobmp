@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class LSBI implements SteganographyMethod{
-    static private final int BYTES_HEADER = 54;
     static private final int BITS_IN_BYTE = 8;
     static private final int BYTES_PREFIX = 4;
     static private int BYTES_SIZE = 4;
@@ -25,7 +24,7 @@ public class LSBI implements SteganographyMethod{
         int byteIndex, bitPosition;
         byte mask, payloadBit, carrierBit;
 
-        for(int payloadIndex = 0, carrierIndex = BYTES_HEADER + BYTES_PREFIX; payloadIndex < payload.length * BITS_IN_BYTE; carrierIndex++) {
+        for(int payloadIndex = 0, carrierIndex = BYTES_PREFIX; payloadIndex < payload.length * BITS_IN_BYTE; carrierIndex++) {
             // El header no cuenta para los colores
             // 54 % 3 == 0 => eso no me jode
             // Azul - Verde - Rojo (no lo toco)
@@ -51,7 +50,7 @@ public class LSBI implements SteganographyMethod{
 
         // Pone los headers de que prefijos voy a reeemplazar
         for(int i = 0, carrierIndex; i < prefixReplaced.length; i++){
-            carrierIndex = i + BYTES_HEADER;
+            carrierIndex = i;
             if(prefixReplaced[i] > 0){
                 carrier[carrierIndex] = (byte) ((carrier[carrierIndex] & MASK_CARRIER) | 1);
             }else{
@@ -60,7 +59,7 @@ public class LSBI implements SteganographyMethod{
         }
 
         // Hacer mas performante
-        for(int payloadIndex = 0, carrierIndex = BYTES_HEADER + BYTES_PREFIX; payloadIndex < payload.length * BITS_IN_BYTE; carrierIndex++) {
+        for(int payloadIndex = 0, carrierIndex = BYTES_PREFIX; payloadIndex < payload.length * BITS_IN_BYTE; carrierIndex++) {
             if(carrierIndex%3!=2){
                 prefix = (byte) ((carrier[carrierIndex] & MASK_PREFIX) >> 1);
 
@@ -85,7 +84,7 @@ public class LSBI implements SteganographyMethod{
 
         // SETEAR QUE PREFIJOS FUERON CAMBIADOS
         boolean[] prefixReplaced = {true, true, true, true}; // {00, 01, 10, 11}
-        for(int i = 0, carrierIndex = BYTES_HEADER; i< BYTES_PREFIX; i++, carrierIndex++){
+        for(int i = 0, carrierIndex = 0; i< BYTES_PREFIX; i++, carrierIndex++){
             if((carrier[carrierIndex] & MASK_PAYLOAD) == 0){
                 prefixReplaced[i] = false;
             }
@@ -95,7 +94,7 @@ public class LSBI implements SteganographyMethod{
         byte[] sizeAux = new byte[BYTES_SIZE];
         int k = 0;
         int i = 0;
-        int carrierIndex = BYTES_PREFIX + BYTES_HEADER;
+        int carrierIndex = BYTES_PREFIX;
         byte prefix, carrierBit, payloadByte = 0;
 
 
@@ -159,13 +158,6 @@ public class LSBI implements SteganographyMethod{
 
     public static void main(String[] args) throws IOException {
         byte[] carrier = {
-                0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,
-
                 // 4 para los prefijos
                 (byte) 0b10000001,
                 (byte) 0b10000001,
@@ -466,7 +458,7 @@ public class LSBI implements SteganographyMethod{
                 (byte) 0b00000000, // 0
                 (byte) 0b00000000, // 0
                 (byte) 0b00000000, // 0
-                (byte) 0b00000101, // 4
+                (byte) 0b00000101, // 5
                 (byte) 0b01101000, // 'h'
                 (byte) 0b01101111, // 'o'
                 (byte) 0b01101100, // 'l'

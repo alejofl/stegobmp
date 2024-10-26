@@ -26,11 +26,11 @@ public class LSB1 implements SteganographyMethod{
             throw new IllegalArgumentException();
         }
 
-        int i = HEADER_SIZE;
+        int i = 0;
         int k = 0;
         byte payloadByte = 0;
 
-        while(i < HEADER_SIZE + (payload.length * BYTES_NEEDED)) {
+        while(i < payload.length * BYTES_NEEDED) {
             for (int j = 0; j < BYTES_NEEDED; j++) {
                 payloadByte = (byte) (payload[k] >> (8 - BITS_TO_HIDE * (j + 1)));
                 payloadByte = (byte) (payloadByte & MASK_PAYLOAD);
@@ -49,15 +49,15 @@ public class LSB1 implements SteganographyMethod{
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         DataOutputStream writer = new DataOutputStream(output);
 
-        for (int i = HEADER_SIZE; i < (HEADER_SIZE + (BYTES_NEEDED * PAYLOAD_LENGTH_SIZE)); i++) {
+        for (int i = 0; i < BYTES_NEEDED * PAYLOAD_LENGTH_SIZE; i++) {
             int sizeBit = carrier[i] & MASK_PAYLOAD;
-            sizeBit = sizeBit << (32 - BITS_TO_HIDE * (i + 1 - HEADER_SIZE));
+            sizeBit = sizeBit << (32 - BITS_TO_HIDE * (i + 1));
             payloadSize = payloadSize | sizeBit;
         }
 
-        int i = HEADER_SIZE;
-        byte payloadByte = 0;
-        for ( ; i < (HEADER_SIZE + BYTES_NEEDED * (payloadSize + PAYLOAD_LENGTH_SIZE)); i += BYTES_NEEDED) {
+        int i = 0;
+        byte payloadByte;
+        for ( ; i < BYTES_NEEDED * (payloadSize + PAYLOAD_LENGTH_SIZE); i += BYTES_NEEDED) {
             payloadByte = cicle(carrier, i);
             writer.write(payloadByte);
         }
@@ -85,7 +85,7 @@ public class LSB1 implements SteganographyMethod{
 
     @Override
     public boolean canEmbed(byte[] carrier, byte[] payload) {
-        long carrierBytes = carrier.length - HEADER_SIZE;
+        long carrierBytes = carrier.length;
         long payloadBytesNeeded = (long) payload.length * BYTES_NEEDED;
 
         return payloadBytesNeeded <= carrierBytes;
@@ -93,13 +93,6 @@ public class LSB1 implements SteganographyMethod{
 
     public static void main(String[] args) throws IOException {
         byte[] carrier = {
-                0,1,2,3,4,5,6,7,8,9,
-                0,1,2,3,4,5,6,7,8,9,
-                0,1,2,3,4,5,6,7,8,9,
-                0,1,2,3,4,5,6,7,8,9,
-                0,1,2,3,4,5,6,7,8,9,
-                0,1,2,3,
-
                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
