@@ -26,7 +26,9 @@ public class Main {
             if (password == null) {
                 encryptionAlgorithm = EncryptionAlgorithm.NONE;
             }
-            byte[] carrier = FileUtils.readBytes(parsed.getOptionValue("p"));
+            SimpleEntry<byte[], byte[]> bmp = FileUtils.loadCarrier(parsed.getOptionValue("p"));
+            byte[] header = bmp.getKey();
+            byte[] carrier = bmp.getValue();
 
             Cryptography cryptography = new Cryptography(encryptionAlgorithm, encryptionMode, password);
             SteganographyMethod steganographyMethod = steganographyAlgorithm.getInstance();
@@ -40,12 +42,12 @@ public class Main {
                 }
                 byte[] result = steganographyMethod.embed(carrier, data);
                 Path output = FileUtils.createFile(parsed.getOptionValue("out"));
-                FileUtils.writeBytes(output, result);
+                FileUtils.writeBytes(output, header, result);
             } else if (parsed.hasOption("extract")) {
                 byte[] extracted = steganographyMethod.extract(carrier, encryptionAlgorithm != EncryptionAlgorithm.NONE);
                 SimpleEntry<byte[], String> data = steganographyMethod.postprocessExtraction(extracted, cryptography);
                 Path output = FileUtils.createFile(parsed.getOptionValue("out") + data.getValue());
-                FileUtils.writeBytes(output, data.getKey());
+                FileUtils.writeBytes(output, null, data.getKey());
             } else {
                 throw new ParseException("Mode not specified");
             }
