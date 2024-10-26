@@ -1,5 +1,7 @@
 package ar.edu.itba.cripto.steganography;
 
+import ar.edu.itba.cripto.utils.InvalidCarrierException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -14,9 +16,9 @@ public class LSBI implements SteganographyMethod{
     static private byte MASK_CARRIER = (byte) 0b11111110;
 
     @Override
-    public byte[] embed(byte[] carrier, byte[] payload) {
+    public byte[] embed(byte[] carrier, byte[] payload, int offsetLength) {
         if(!canEmbed(carrier, payload)){
-            throw new IllegalArgumentException();
+            throw new InvalidCarrierException((payload.length * BITS_IN_BYTE) + BYTES_PREFIX + offsetLength);
         }
 
         int[] prefixReplaced = {0, 0, 0, 0}; // {00, 01, 10, 11}
@@ -472,7 +474,7 @@ public class LSBI implements SteganographyMethod{
         };
         LSBI aux = new LSBI();
 
-        byte[] embed = aux.embed(carrier, payload);
+        byte[] embed = aux.embed(carrier, payload, 0);
         int i =0;
         for (byte b : embed) {
             System.out.println(String.format("%d - %8s", i, Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));

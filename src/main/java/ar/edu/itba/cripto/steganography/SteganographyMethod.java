@@ -13,7 +13,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 
 public interface SteganographyMethod {
-    byte[] embed(byte[] carrier, byte[] payload);
+    byte[] embed(byte[] carrier, byte[] payload, int offsetLength);
 
     byte[] extract(byte[] carrier, boolean isEncrypted) throws IOException;
 

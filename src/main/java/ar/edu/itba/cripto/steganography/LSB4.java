@@ -99,7 +99,7 @@ public class LSB4 extends LSB1 {
         }
 
         System.out.println("\nAplicando máscaras y modificando bits:");
-        aux.embed(carrier, payload);
+        aux.embed(carrier, payload, 0);
 
         // Mostrar el carrier final modificado
         System.out.println("\nCarrier final modificado:");

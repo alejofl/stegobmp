@@ -1,5 +1,7 @@
 package ar.edu.itba.cripto.steganography;
 
+import ar.edu.itba.cripto.utils.InvalidCarrierException;
+
 import javax.xml.crypto.Data;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -7,7 +9,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class LSB1 implements SteganographyMethod{
-    static private final int HEADER_SIZE = 54;
     static private final int PAYLOAD_LENGTH_SIZE = 4;
     protected int BYTES_NEEDED;
     protected int BITS_TO_HIDE;
@@ -21,9 +22,9 @@ public class LSB1 implements SteganographyMethod{
         this.MASK_CARRIER = (byte) 0b11111110;
     }
 
-    public byte[] embed(byte[] carrier, byte[] payload) {
+    public byte[] embed(byte[] carrier, byte[] payload, int offsetLength) {
         if (!canEmbed(carrier, payload)) {
-            throw new IllegalArgumentException();
+            throw new InvalidCarrierException(payload.length * BYTES_NEEDED + offsetLength);
         }
 
         int i = 0;
@@ -192,7 +193,7 @@ public class LSB1 implements SteganographyMethod{
         }
 
         System.out.println("\nAplicando máscaras y modificando bits:");
-        aux.embed(carrier, payload);
+        aux.embed(carrier, payload, 0);
 
         // Mostrar el carrier final modificado
         System.out.println("\nCarrier final modificado:");

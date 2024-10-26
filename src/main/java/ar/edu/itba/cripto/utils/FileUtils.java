@@ -44,4 +44,17 @@ public class FileUtils {
     public static String getExtension(String path) {
         return path.substring(path.lastIndexOf('.'));
     }
+
+    public static String getHumanReadableSize(int bytes) {
+        float bytesFloat = (float) bytes;
+        if (bytes < 1024) {
+            return String.format("%.2f B", bytesFloat);
+        } else if (bytes < 1024 * 1024) {
+            return String.format("%.2f KB", bytesFloat / 1024);
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return String.format("%.2f MB", bytesFloat / (1024 * 1024));
+        } else {
+            return String.format("%.2f GB", bytesFloat / (1024 * 1024 * 1024));
+        }
+    }
 }

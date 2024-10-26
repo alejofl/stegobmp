@@ -37,10 +37,7 @@ public class Main {
                 byte[] payload = FileUtils.readBytes(parsed.getOptionValue("in"));
                 String payloadExtension = FileUtils.getExtension(parsed.getOptionValue("in"));
                 byte[] data = steganographyMethod.preprocessEmbedding(payload, payloadExtension, cryptography);
-                if (!steganographyMethod.canEmbed(carrier, data)) {
-                    throw new IllegalArgumentException("Carrier is too small to embed the payload");
-                }
-                byte[] result = steganographyMethod.embed(carrier, data);
+                byte[] result = steganographyMethod.embed(carrier, data, header.length);
                 Path output = FileUtils.createFile(parsed.getOptionValue("out"));
                 FileUtils.writeBytes(output, header, result);
             } else if (parsed.hasOption("extract")) {
